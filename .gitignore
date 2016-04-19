@@ -1,0 +1,4 @@
+.vagrant/
+images/
+*.vmdk
+*.box
