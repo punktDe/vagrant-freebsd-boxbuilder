@@ -7,6 +7,7 @@ Usage
 git clone git@gitlab.pluspunkthosting.de:devops/vagrant-freebsd-zfs.git
 cd vagrant-freebsd-zfs
 vagrant up || vagrant up
+vagrant halt
 ./package.sh
 ````
 
@@ -29,7 +30,7 @@ How's it work?
 * Deploy and start Hashicorp's standard FreeBSD box.
 * Create second HDD via `VBoxManage`.
 * Checkout (first run) or update (consecutive runs) FreeBSD source tree.
-* Compile userland and kernel if necessary.
+* Compile userland and kernel if necessary (with VIMAGE support).
 * Create ZFS, install, add config files and `vagrant` user.
 * Install some packages from standard FreeBSD repository.
 * Shutdown when finished.

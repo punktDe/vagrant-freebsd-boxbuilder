@@ -62,13 +62,14 @@ Vagrant.configure(2) do |config|
     test -f /usr/src/UPDATING || svn co "svn://svn0.eu.freebsd.org/base/releng/#{$freebsd_version}" /usr/src
     echo "SVN_UPDATE=		yes" > /etc/make.conf
     cd /usr/src && make update
+    cp /var/vagrant/files/VIMAGE /usr/src/sys/amd64/conf
 
     # check if source changed and we need to rebuild everything
     if [ ! -f /usr/obj/usr/src/bin/freebsd-version/freebsd-version -o /usr/src/UPDATING -nt /usr/obj/usr/src/bin/freebsd-version/freebsd-version ]
     then
       chflags -R noschg /usr/obj
       rm -rf /usr/obj
-      cd /usr/src && make -j 2 buildworld buildkernel
+      cd /usr/src && make -j 2 KERNCONF=VIMAGE buildworld buildkernel
     fi
 
     # erase target disk
@@ -94,7 +95,7 @@ Vagrant.configure(2) do |config|
     zfs set checksum=fletcher4 zroot
 
     # install FreeBSD into ZFS
-    cd /usr/src && make DESTDIR=/mnt/zroot installworld installkernel distribution
+    cd /usr/src && make DESTDIR=/mnt/zroot KERNCONF=VIMAGE installworld installkernel distribution
     cp /var/vagrant/files/fstab /mnt/zroot/etc
     cp /var/vagrant/files/rc.conf /mnt/zroot/etc
     cp /var/vagrant/files/loader.conf /mnt/zroot/boot
@@ -120,9 +121,5 @@ Vagrant.configure(2) do |config|
     cp /var/tmp/zpool.cache /mnt/zroot/boot/zfs/zpool.cache
     zfs unmount -a
     zfs set mountpoint=legacy zroot
-
-    # shutdown system so box can be packaged
-    shutdown -p now
-
   SHELL
 end
