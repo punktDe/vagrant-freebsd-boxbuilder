@@ -33,8 +33,7 @@ How's it work?
 * Compile userland and kernel if necessary (with VIMAGE support).
 * Create ZFS, install, add config files and `vagrant` user.
 * Install some packages from standard FreeBSD repository.
-* Shutdown when finished.
-* Use `package.sh` script to create `.box` file from disk image.
+* Use `vagrant halt` followed by `package.sh` script to create `.box` file from disk image.
 
 Useful stuff
 ------------
