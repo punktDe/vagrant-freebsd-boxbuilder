@@ -44,4 +44,4 @@ Useful stuff
 
 ToDo
 ----
-* Find a place for the box to reside for download via HTTPS.
+* Find a place for the boxes to reside for download via HTTPS.
