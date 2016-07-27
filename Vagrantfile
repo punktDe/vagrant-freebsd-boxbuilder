@@ -3,28 +3,34 @@ Vagrant.configure(2) do |config|
   # Which box to use for building
   $build_box = 'freebsd/FreeBSD-10.3-RELEASE'
 
+  # How many cores to use
+  $build_cores = 2
+
   # Which FreeBSD version to install in target box
   $freebsd_version = '10.3'
 
-  # ZFS target disk specification
+  # Target disk specification
   #
   # * Disk size and swap size in megabytes
   # * Controller must match config of build box from Hashicorp
   # * Device depends on build box, too
-  $disk_file = 'disk1.vmdk'
-  $disk_size = 20 * 1024
-  $swap_size = 4096
   $disk_controller = 'IDE Controller'
-  $disk_device = 'ada1'
+
+  $zfs_disk_size = 20 * 1024
+  $zfs_swap_size = 4096
+  $zfs_disk_device = 'ada1'
+
+  $ufs_disk_size = 20 * 1024
+  $ufs_swap_size = 4096
+  $ufs_disk_device = 'ada2'
 
   # how far to seek to the end of the device to erase GPT information
-  $disk_seek = $disk_size * 2048 - 34
+  $zfs_disk_seek = $zfs_disk_size * 2048 - 34
+  $ufs_disk_seek = $ufs_disk_size * 2048 - 34
 
   # User settable  box parameters here
   $vagrant_mount_path = '/var/vagrant'
   $virtual_machine_ip = '10.20.30.193'
-  $virtual_machine_hostname = "zfs.vagrant.dev.punkt.de"
-  $virtual_box_machine_name = "FreeBSD-10.3-ZFS"
 
   # Use proper shell
   config.ssh.shell = 'sh'
@@ -37,24 +43,30 @@ Vagrant.configure(2) do |config|
   # boxes at https://atlas.hashicorp.com/search.
   config.vm.box = $build_box
 
+  # Increase the boot timeout for first start of the build box.
+  # Hashicorp run freebsd-update on start which may take a long time.
+  config.vm.boot_timeout = 600
+
   # Create a private network, which allows host-only access to the machine
   # using a specific IP.
   config.vm.network "private_network", ip: $virtual_machine_ip
 
-  # Customize VB settings
+  # Customize build VB settings
   config.vm.provider "virtualbox" do |vb|
     vb.memory = "4096"
-    vb.cpus = "2"
+    vb.cpus = $build_cores
 
-    unless File.exist?($disk_file)
-      vb.customize ['createhd', '--format', 'VMDK', '--filename', $disk_file, '--variant', 'Standard', '--size', $disk_size]
+    unless File.exist?('zfs.vmdk')
+      vb.customize ['createhd', '--format', 'VMDK', '--filename', 'zfs.vmdk', '--variant', 'Standard', '--size', $zfs_disk_size]
     end
-    vb.customize ['storageattach', :id,  '--storagectl', $disk_controller, '--port', 1, '--device', 0, '--type', 'hdd', '--medium', $disk_file]
+    unless File.exist?('ufs.vmdk')
+      vb.customize ['createhd', '--format', 'VMDK', '--filename', 'ufs.vmdk', '--variant', 'Standard', '--size', $ufs_disk_size]
+    end
+    vb.customize ['storageattach', :id,  '--storagectl', $disk_controller, '--port', 1, '--device', 0, '--type', 'hdd', '--medium', 'zfs.vmdk']
+    vb.customize ['storageattach', :id,  '--storagectl', $disk_controller, '--port', 1, '--device', 1, '--type', 'hdd', '--medium', 'ufs.vmdk']
   end
 
-  # Enable provisioning with a shell script. Additional provisioners such as
-  # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
-  # documentation for more information about their specific syntax and use.
+  # Real work starts here
   config.vm.provision "shell", inline: <<-SHELL
 
     # fetch and update FreeBSD source code
@@ -64,24 +76,33 @@ Vagrant.configure(2) do |config|
     cd /usr/src && make update
     cp /var/vagrant/files/VIMAGE /usr/src/sys/amd64/conf
 
-    # check if source changed and we need to rebuild everything
+    # check if source changed and rebuild everything if necessary
     if [ ! -f /usr/obj/usr/src/bin/freebsd-version/freebsd-version -o /usr/src/UPDATING -nt /usr/obj/usr/src/bin/freebsd-version/freebsd-version ]
     then
       chflags -R noschg /usr/obj
       rm -rf /usr/obj
-      cd /usr/src && make -j 2 KERNCONF=VIMAGE buildworld buildkernel
+      cd /usr/src && make -j #{$build_cores} KERNCONF=VIMAGE buildworld buildkernel
     fi
 
-    # erase target disk
-    dd if=/dev/zero of=/dev/#{$disk_device} count=34
-    dd if=/dev/zero of=/dev/#{$disk_device} oseek=#{$disk_seek}
+    # erase target disks
+    dd if=/dev/zero of=/dev/#{$zfs_disk_device} count=34
+    dd if=/dev/zero of=/dev/#{$zfs_disk_device} oseek=#{$zfs_disk_seek}
+    dd if=/dev/zero of=/dev/#{$ufs_disk_device} count=34
+    dd if=/dev/zero of=/dev/#{$ufs_disk_device} oseek=#{$ufs_disk_seek}
 
-    # create partitions and install bootloader
-    gpart create -s gpt #{$disk_device}
-    gpart add -a 4k -s 512k -t freebsd-boot #{$disk_device}
-    gpart add -a 1m -s #{$swap_size}m -t freebsd-swap -l swap0 #{$disk_device}
-    gpart add -a 1m -t freebsd-zfs -l disk0 #{$disk_device}
-    gpart bootcode -b /boot/pmbr -p /boot/gptzfsboot -i 1 #{$disk_device}
+    # create partitions and install bootloader for ZFS disk
+    gpart create -s gpt #{$zfs_disk_device}
+    gpart add -a 4k -s 512k -t freebsd-boot #{$zfs_disk_device}
+    gpart add -a 1m -s #{$zfs_swap_size}m -t freebsd-swap #{$zfs_disk_device}
+    gpart add -a 1m -t freebsd-zfs #{$zfs_disk_device}
+    gpart bootcode -b /boot/pmbr -p /boot/gptzfsboot -i 1 #{$zfs_disk_device}
+
+    # create partitions and install bootloader for UFS disk
+    gpart create -s gpt #{$ufs_disk_device}
+    gpart add -a 4k -s 512k -t freebsd-boot #{$ufs_disk_device}
+    gpart add -a 1m -s #{$ufs_swap_size}m -t freebsd-swap #{$ufs_disk_device}
+    gpart add -a 1m -t freebsd-zfs #{$ufs_disk_device}
+    gpart bootcode -b /boot/pmbr -p /boot/gptboot -i 1 #{$ufs_disk_device}
 
     # load ZFS
     kldload opensolaris
@@ -90,36 +111,57 @@ Vagrant.configure(2) do |config|
 
     # create and configure zpool
     zpool destroy -f zroot
-    zpool create -f -o altroot=/mnt -o cachefile=/var/tmp/zpool.cache zroot /dev/gpt/disk0
+    zpool create -f -o cachefile=/var/tmp/zpool.cache zroot /dev/#{$zfs_disk_device}p2
     zpool set bootfs=zroot zroot
     zfs set checksum=fletcher4 zroot
+    zfs set compression=lz4 zroot
 
-    # install FreeBSD into ZFS
-    cd /usr/src && make DESTDIR=/mnt/zroot KERNCONF=VIMAGE installworld installkernel distribution
-    cp /var/vagrant/files/fstab /mnt/zroot/etc
-    cp /var/vagrant/files/rc.conf /mnt/zroot/etc
-    cp /var/vagrant/files/loader.conf /mnt/zroot/boot
+    # create and mount UFS filesystem
+    newfs /dev/#{$ufs_disk_device}p2
+    mount /dev/#{$ufs_disk_device}p2 /mnt
 
-    # install some necessary packages
     export ASSUME_ALWAYS_YES="yes"
-    cp /etc/resolv.conf /mnt/zroot/etc
-    chroot /mnt/zroot pkg update
-    chroot /mnt/zroot pkg install ca_root_nss sudo bash virtualbox-ose-additions
 
-    # create and configure vagrant user
-    echo "%vagrant ALL=(ALL) NOPASSWD: ALL" > /mnt/zroot/usr/local/etc/sudoers.d/vagrant
-    chmod 640 /mnt/zroot/usr/local/etc/sudoers.d/vagrant
-    chroot /mnt/zroot sh -c 'echo "*" | pw useradd -n vagrant -s /usr/local/bin/bash -m -G wheel -H 0'
-    mkdir /mnt/zroot/home/vagrant/.ssh
-    chmod 700 /mnt/zroot/home/vagrant/.ssh
-    touch /mnt/zroot/home/vagrant/.ssh/authorized_keys
-    chroot /mnt/zroot chown -R vagrant:vagrant /home/vagrant
-    chroot /mnt/zroot fetch -o /home/vagrant/.ssh/authorized_keys https://raw.github.com/mitchellh/vagrant/master/keys/vagrant.pub
+    for dstdir in /zroot /mnt
+    do
+      # install FreeBSD
+      cd /usr/src && make DESTDIR=${dstdir} KERNCONF=VIMAGE installworld installkernel distribution
+
+      # install some necessary packages
+      cp /etc/resolv.conf ${dstdir}/etc
+      chroot ${dstdir} pkg update
+      chroot ${dstdir} pkg install ca_root_nss sudo bash virtualbox-ose-additions
+
+      # create and configure vagrant user
+      echo "%vagrant ALL=(ALL) NOPASSWD: ALL" > ${dstdir}/usr/local/etc/sudoers.d/vagrant
+      chmod 640 ${dstdir}/usr/local/etc/sudoers.d/vagrant
+      chroot ${dstdir} sh -c 'echo "*" | pw useradd -n vagrant -s /usr/local/bin/bash -m -G wheel -H 0'
+      mkdir ${dstdir}/home/vagrant/.ssh
+      chmod 700 ${dstdir}/home/vagrant/.ssh
+      touch ${dstdir}/home/vagrant/.ssh/authorized_keys
+      chroot ${dstdir} chown -R vagrant:vagrant /home/vagrant
+      chroot ${dstdir} fetch -o /home/vagrant/.ssh/authorized_keys https://raw.github.com/mitchellh/vagrant/master/keys/vagrant.pub
+
+      # clean up
+      rm -f ${dstdir}/etc/resolv.conf
+    done
+
+    # copy config files for ZFS box
+    cp /var/vagrant/files/zfs/fstab /zroot/etc
+    cp /var/vagrant/files/zfs/rc.conf /zroot/etc
+    cp /var/vagrant/files/zfs/loader.conf /zroot/boot
 
     # finish ZFS setup and unmount disk
-    rm -f /mnt/zroot/etc/resolv.conf
-    cp /var/tmp/zpool.cache /mnt/zroot/boot/zfs/zpool.cache
-    zfs unmount -a
+    cp /var/tmp/zpool.cache /zroot/boot/zfs/zpool.cache
+    zfs umount -a
     zfs set mountpoint=legacy zroot
+
+    # copy config files for UFS box
+    cp /var/vagrant/files/ufs/fstab /mnt/etc
+    cp /var/vagrant/files/ufs/rc.conf /mnt/etc
+    cp /var/vagrant/files/ufs/loader.conf /mnt/boot
+
+    # unmount UFS disk
+    umount /mnt
   SHELL
 end

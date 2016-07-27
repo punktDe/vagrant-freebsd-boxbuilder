@@ -1,4 +1,4 @@
 .vagrant/
-images/
+tmp/
 *.vmdk
 *.box

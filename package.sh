@@ -1,24 +1,29 @@
 #! /bin/sh
 
 BASE_DIR=`pwd`/tmp
-BOX_NAME="freebsd-zfs-build"
-BOX_DIR="${BASE_DIR}/${BOX_NAME}"
-EXPORT_NAME="freebsd-zfs"
+BOX_BASENAME="punkt-freebsd"
 
 mkdir -p "${BASE_DIR}"
 
-VBoxManage createvm --name "${BOX_NAME}" --ostype FreeBSD_64 --basefolder "${BASE_DIR}"
-VBoxManage registervm "${BOX_DIR}/${BOX_NAME}.vbox"
+for fs in zfs ufs
+do
+  boxname="${BOX_BASENAME}-${fs}"
+  boxdir="${BASE_DIR}/${boxname}"
 
-cp disk1.vmdk "${BOX_DIR}/${BOX_NAME}.vmdk"
-VBoxManage internalcommands sethduuid "${BOX_DIR}/${BOX_NAME}.vmdk"
+  VBoxManage createvm --name "${boxname}" --ostype FreeBSD_64 --basefolder "${BASE_DIR}"
+  VBoxManage registervm "${boxdir}/${boxname}.vbox"
 
-VBoxManage storagectl "${BOX_NAME}" --name LsiLogic --add scsi --controller LsiLogic
-VBoxManage storageattach "${BOX_NAME}" --storagectl LsiLogic --port 0 --device 0 --type hdd --medium "${BOX_DIR}/${BOX_NAME}.vmdk"
+  cp "${fs}.vmdk" "${boxdir}/${boxname}.vmdk"
+  VBoxManage internalcommands sethduuid "${boxdir}/${boxname}.vmdk"
 
-VBoxManage modifyvm "${BOX_NAME}" --memory 4096
+  VBoxManage storagectl "${boxname}" --name LsiLogic --add scsi --controller LsiLogic
+  VBoxManage storageattach "${boxname}" --storagectl LsiLogic --port 0 --device 0 --type hdd --medium "${boxdir}/${boxname}.vmdk"
 
-vagrant package --base "${BOX_NAME}" --output "${EXPORT_NAME}.box"
+  VBoxManage modifyvm "${boxname}" --memory 4096
 
-VBoxManage unregistervm "${BOX_NAME}" --delete
+  vagrant package --base "${boxname}" --output "${boxname}.box"
+
+  VBoxManage unregistervm "${boxname}" --delete
+done
+
 rmdir "${BASE_DIR}"

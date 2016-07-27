@@ -1,15 +1,16 @@
-Vagrant project to generate FreeBSD/ZFS based empty Vagrant box
-===============================================================
+Vagrant project to generate FreeBSD based empty Vagrant boxes, one with ZFS, one with UFS
+=========================================================================================
 
 Usage
 -----
 ````
-git clone git@gitlab.pluspunkthosting.de:devops/vagrant-freebsd-zfs.git
-cd vagrant-freebsd-zfs
+git clone git@gitlab.pluspunkthosting.de:devops/vagrant-freebsd-boxbuilder.git
+cd vagrant-freebsd-boxbuilder
 vagrant up || vagrant up
 vagrant halt
 ./package.sh
 ````
+The very first `vagrant up` may take a long time, because it runs freebsd-update - be patient.
 
 Files
 -----
@@ -20,27 +21,27 @@ Parameters to tweak
 -------------------
 In _Vagrantfile_:
 
-* `$build_box` - which box (preferably Hashicorp) to use
-* `$freebsd_version` - which FreeBSD version to install in the target box
-* `$disk_size` - size of hard disk for target box
-* `$swap_size` - swap size for target box
+* `$build_box` - which box (preferably Hashicorp's) to use for building
+* `$freebsd_version` - which FreeBSD version to install in the target boxes
+* `${zfs|ufs}_disk_size` - size of hard disk for respective target box
+* `${zfs|ufs}_swap_size` - swap size for respective target box
 
 How's it work?
 --------------
 * Deploy and start Hashicorp's standard FreeBSD box.
-* Create second HDD via `VBoxManage`.
+* Create second and third HDD via `VBoxManage`.
 * Checkout (first run) or update (consecutive runs) FreeBSD source tree.
 * Compile userland and kernel if necessary (with VIMAGE support).
-* Create ZFS, install, add config files and `vagrant` user.
-* Install some packages from standard FreeBSD repository.
-* Use `vagrant halt` followed by `package.sh` script to create `.box` file from disk image.
+* Create ZFS, install, add config files and `vagrant` user on second hard disk.
+* Create UFS, [...] on third hard disk.
+* Install some packages from standard FreeBSD repository on both disks.
+* Use `vagrant halt` followed by `package.sh` script to create `.box` files from disk images.
 
 Useful stuff
 ------------
-* On subsequent `vagrant provision` runs the compile stage is skipped, if there are no changes to `/usr/src/UPDATING`.
+* On subsequent `vagrant provision` runs the compile stage is skipped if there are no changes to `/usr/src/UPDATING`.
 * When making changes, shutdown via `vagrant halt` before each new `vagrant provision`.
 
 ToDo
 ----
-* Improve ZFS filesystem layout.
 * Find a place for the box to reside for download via HTTPS.
