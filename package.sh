@@ -1,7 +1,7 @@
 #! /bin/sh
 
 BASE_DIR=`pwd`/tmp
-BOX_BASENAME="punkt-freebsd"
+BOX_BASENAME="punktde-freebsd"
 
 mkdir -p "${BASE_DIR}"
 
@@ -21,6 +21,7 @@ do
 
   VBoxManage modifyvm "${boxname}" --memory 4096
 
+  rm -f "${boxname}.box"
   vagrant package --base "${boxname}" --output "${boxname}.box"
 
   VBoxManage unregistervm "${boxname}" --delete

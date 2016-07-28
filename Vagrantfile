@@ -56,13 +56,17 @@ Vagrant.configure(2) do |config|
     vb.memory = "4096"
     vb.cpus = $build_cores
 
-    unless File.exist?('zfs.vmdk')
-      vb.customize ['createhd', '--format', 'VMDK', '--filename', 'zfs.vmdk', '--variant', 'Standard', '--size', $zfs_disk_size]
+    if File.exist?('zfs.vmdk')
+      vb.customize ['storageattach', :id,  '--storagectl', $disk_controller, '--port', 1, '--device', 0, '--type', 'hdd', '--medium', 'none']
+      vb.customize ['closemedium', 'zfs.vmdk', '--delete']
     end
-    unless File.exist?('ufs.vmdk')
-      vb.customize ['createhd', '--format', 'VMDK', '--filename', 'ufs.vmdk', '--variant', 'Standard', '--size', $ufs_disk_size]
+    if File.exist?('ufs.vmdk')
+      vb.customize ['storageattach', :id,  '--storagectl', $disk_controller, '--port', 1, '--device', 1, '--type', 'hdd', '--medium', 'none']
+      vb.customize ['closemedium', 'ufs.vmdk', '--delete']
     end
+    vb.customize ['createhd', '--format', 'VMDK', '--filename', 'zfs.vmdk', '--variant', 'Standard', '--size', $zfs_disk_size]
     vb.customize ['storageattach', :id,  '--storagectl', $disk_controller, '--port', 1, '--device', 0, '--type', 'hdd', '--medium', 'zfs.vmdk']
+    vb.customize ['createhd', '--format', 'VMDK', '--filename', 'ufs.vmdk', '--variant', 'Standard', '--size', $ufs_disk_size]
     vb.customize ['storageattach', :id,  '--storagectl', $disk_controller, '--port', 1, '--device', 1, '--type', 'hdd', '--medium', 'ufs.vmdk']
   end
 
@@ -92,16 +96,16 @@ Vagrant.configure(2) do |config|
 
     # create partitions and install bootloader for ZFS disk
     gpart create -s gpt #{$zfs_disk_device}
-    gpart add -a 4k -s 512k -t freebsd-boot #{$zfs_disk_device}
-    gpart add -a 1m -s #{$zfs_swap_size}m -t freebsd-swap #{$zfs_disk_device}
-    gpart add -a 1m -t freebsd-zfs #{$zfs_disk_device}
+    gpart add -a 512k -s 512k -t freebsd-boot -l boot #{$zfs_disk_device}
+    gpart add -a 1m -s #{$zfs_swap_size}m -t freebsd-swap -l swap #{$zfs_disk_device}
+    gpart add -a 1m -t freebsd-zfs -l root #{$zfs_disk_device}
     gpart bootcode -b /boot/pmbr -p /boot/gptzfsboot -i 1 #{$zfs_disk_device}
 
     # create partitions and install bootloader for UFS disk
     gpart create -s gpt #{$ufs_disk_device}
-    gpart add -a 4k -s 512k -t freebsd-boot #{$ufs_disk_device}
+    gpart add -a 512k -s 512k -t freebsd-boot #{$ufs_disk_device}
     gpart add -a 1m -s #{$ufs_swap_size}m -t freebsd-swap #{$ufs_disk_device}
-    gpart add -a 1m -t freebsd-zfs #{$ufs_disk_device}
+    gpart add -a 1m -t freebsd-ufs #{$ufs_disk_device}
     gpart bootcode -b /boot/pmbr -p /boot/gptboot -i 1 #{$ufs_disk_device}
 
     # load ZFS
@@ -110,15 +114,14 @@ Vagrant.configure(2) do |config|
     sysctl vfs.zfs.min_auto_ashift=12
 
     # create and configure zpool
-    zpool destroy -f zroot
-    zpool create -f -o cachefile=/var/tmp/zpool.cache zroot /dev/#{$zfs_disk_device}p2
+    zpool create -f -o cachefile=/var/tmp/zpool.cache zroot gpt/root
     zpool set bootfs=zroot zroot
     zfs set checksum=fletcher4 zroot
     zfs set compression=lz4 zroot
 
     # create and mount UFS filesystem
-    newfs /dev/#{$ufs_disk_device}p2
-    mount /dev/#{$ufs_disk_device}p2 /mnt
+    newfs /dev/#{$ufs_disk_device}p3
+    mount /dev/#{$ufs_disk_device}p3 /mnt
 
     export ASSUME_ALWAYS_YES="yes"
 
@@ -152,9 +155,10 @@ Vagrant.configure(2) do |config|
     cp /var/vagrant/files/zfs/loader.conf /zroot/boot
 
     # finish ZFS setup and unmount disk
+    mkdir -p /zroot/boot/zfs
     cp /var/tmp/zpool.cache /zroot/boot/zfs/zpool.cache
     zfs umount -a
-    zfs set mountpoint=legacy zroot
+    zfs set mountpoint=/ zroot
 
     # copy config files for UFS box
     cp /var/vagrant/files/ufs/fstab /mnt/etc
