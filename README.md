@@ -16,6 +16,7 @@ Files
 -----
 * `Vagrantfile` - how to start and provision the box
 * `files/*` - config files that are copied into the final box
+* `test/test.sh` - small test shellscript that provisions both boxes, then destroys them again
 
 Parameters to tweak
 -------------------
@@ -45,3 +46,4 @@ Useful stuff
 ToDo
 ----
 * Find a place for the boxes to reside for download via HTTPS.
+* Use our own repository so we get e.g. VirtualBox additions without all the X11 cruft.

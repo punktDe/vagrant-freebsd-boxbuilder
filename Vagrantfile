@@ -4,7 +4,7 @@ Vagrant.configure(2) do |config|
   $build_box = 'freebsd/FreeBSD-10.3-RELEASE'
 
   # How many cores to use
-  $build_cores = 2
+  $build_cores = 4
 
   # Which FreeBSD version to install in target box
   $freebsd_version = '10.3'
@@ -158,7 +158,7 @@ Vagrant.configure(2) do |config|
     mkdir -p /zroot/boot/zfs
     cp /var/tmp/zpool.cache /zroot/boot/zfs/zpool.cache
     zfs umount -a
-    zfs set mountpoint=/ zroot
+    zfs set mountpoint=legacy zroot
 
     # copy config files for UFS box
     cp /var/vagrant/files/ufs/fstab /mnt/etc
