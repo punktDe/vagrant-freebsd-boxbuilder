@@ -9,6 +9,10 @@ Vagrant.configure(2) do |config|
   # Which FreeBSD version to install in target box
   $freebsd_version = '10.3'
 
+  # Wich pkg repo to use
+  $package_version = '102-2016Q3'
+  $package_set = 'ap22-php56'
+
   # Target disk specification
   #
   # * Disk size and swap size in megabytes
@@ -128,25 +132,28 @@ Vagrant.configure(2) do |config|
     for dstdir in /zroot /mnt
     do
       # install FreeBSD
-      cd /usr/src && make DESTDIR=${dstdir} KERNCONF=VIMAGE installworld installkernel distribution
+      cd /usr/src && make "DESTDIR=${dstdir}" KERNCONF=VIMAGE installworld installkernel distribution
 
       # install some necessary packages
-      cp /etc/resolv.conf ${dstdir}/etc
-      chroot ${dstdir} pkg update
-      chroot ${dstdir} pkg install ca_root_nss sudo bash virtualbox-ose-additions
+      cp /etc/resolv.conf "${dstdir}/etc"
+      echo "FreeBSD: { enabled: no }" > "${dstdir}/usr/local/etc/pkg/repos/FreeBSD.conf"
+      echo "#{$package_set}: { url: https://packages.pluspunkthosting.de/packages/#{$package_version}-#{$package_set}, enabled: yes, mirror_type: NONE }" > "${dstdir}/usr/local/etc/pkg/repos/#{$package_set}.conf"
+      echo "common: { url: https://packages.pluspunkthosting.de/packages/#{$package_version}-common, enabled: no, mirror_type: NONE }" > "/usr/local/etc/pkg/repos/common.conf"
+      chroot "${dstdir}" pkg update
+      chroot "${dstdir}" pkg install ca_root_nss sudo bash virtualbox-ose-additions
 
       # create and configure vagrant user
-      echo "%vagrant ALL=(ALL) NOPASSWD: ALL" > ${dstdir}/usr/local/etc/sudoers.d/vagrant
-      chmod 640 ${dstdir}/usr/local/etc/sudoers.d/vagrant
-      chroot ${dstdir} sh -c 'echo "*" | pw useradd -n vagrant -s /usr/local/bin/bash -m -G wheel -H 0'
-      mkdir ${dstdir}/home/vagrant/.ssh
-      chmod 700 ${dstdir}/home/vagrant/.ssh
-      touch ${dstdir}/home/vagrant/.ssh/authorized_keys
-      chroot ${dstdir} chown -R vagrant:vagrant /home/vagrant
-      chroot ${dstdir} fetch -o /home/vagrant/.ssh/authorized_keys https://raw.github.com/mitchellh/vagrant/master/keys/vagrant.pub
+      echo "%vagrant ALL=(ALL) NOPASSWD: ALL" > "${dstdir}/usr/local/etc/sudoers.d/vagrant"
+      chmod 640 "${dstdir}/usr/local/etc/sudoers.d/vagrant"
+      chroot "${dstdir}" sh -c 'echo "*" | pw useradd -n vagrant -s /usr/local/bin/bash -m -G wheel -H 0'
+      mkdir "${dstdir}/home/vagrant/.ssh"
+      chmod 700 "${dstdir}/home/vagrant/.ssh"
+      touch "${dstdir}/home/vagrant/.ssh/authorized_keys"
+      chroot "${dstdir}" chown -R vagrant:vagrant /home/vagrant
+      chroot "${dstdir}" fetch -o /home/vagrant/.ssh/authorized_keys https://raw.github.com/mitchellh/vagrant/master/keys/vagrant.pub
 
       # clean up
-      rm -f ${dstdir}/etc/resolv.conf
+      rm -f "${dstdir}/etc/resolv.conf"
     done
 
     # copy config files for ZFS box

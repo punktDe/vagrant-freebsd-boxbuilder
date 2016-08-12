@@ -24,6 +24,8 @@ In _Vagrantfile_:
 
 * `$build_box` - which box (preferably Hashicorp's) to use for building
 * `$freebsd_version` - which FreeBSD version to install in the target boxes
+* `$package_version` - which quarterly package repository to use, e.g. "102-2016Q3"
+* `$package_set` - which package set to use, e.g. "ap22-php56"
 * `${zfs|ufs}_disk_size` - size of hard disk for respective target box
 * `${zfs|ufs}_swap_size` - swap size for respective target box
 
@@ -42,8 +44,3 @@ Useful stuff
 ------------
 * On subsequent `vagrant provision` runs the compile stage is skipped if there are no changes to `/usr/src/UPDATING`.
 * When making changes, shutdown via `vagrant halt` before each new `vagrant provision`.
-
-ToDo
-----
-* Find a place for the boxes to reside for download via HTTPS.
-* Use our own repository so we get e.g. VirtualBox additions without all the X11 cruft.
