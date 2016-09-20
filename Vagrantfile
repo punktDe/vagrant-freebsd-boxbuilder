@@ -136,11 +136,14 @@ Vagrant.configure(2) do |config|
 
       # install some necessary packages
       cp /etc/resolv.conf "${dstdir}/etc"
+      chroot "${dstdir}" pkg install ca_root_nss
+      mkdir -p "${dstdir}/usr/local/etc/pkg/repos"
       echo "FreeBSD: { enabled: no }" > "${dstdir}/usr/local/etc/pkg/repos/FreeBSD.conf"
       echo "#{$package_set}: { url: https://packages.pluspunkthosting.de/packages/#{$package_version}-#{$package_set}, enabled: yes, mirror_type: NONE }" > "${dstdir}/usr/local/etc/pkg/repos/#{$package_set}.conf"
-      echo "common: { url: https://packages.pluspunkthosting.de/packages/#{$package_version}-common, enabled: no, mirror_type: NONE }" > "/usr/local/etc/pkg/repos/common.conf"
+      echo "common: { url: https://packages.pluspunkthosting.de/packages/#{$package_version}-common, enabled: no, mirror_type: NONE }" > "${dstdir}/usr/local/etc/pkg/repos/common.conf"
       chroot "${dstdir}" pkg update
-      chroot "${dstdir}" pkg install ca_root_nss sudo bash virtualbox-ose-additions
+      chroot "${dstdir}" pkg upgrade
+      chroot "${dstdir}" pkg install sudo bash virtualbox-ose-additions python
 
       # create and configure vagrant user
       echo "%vagrant ALL=(ALL) NOPASSWD: ALL" > "${dstdir}/usr/local/etc/sudoers.d/vagrant"
