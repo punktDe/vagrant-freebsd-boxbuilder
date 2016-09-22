@@ -1,3 +1,5 @@
 include GENERIC
 ident VIMAGE
 options VIMAGE
+options WITNESS
+options WITNESS_SKIPSPIN
