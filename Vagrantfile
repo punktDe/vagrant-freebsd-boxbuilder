@@ -140,7 +140,6 @@ Vagrant.configure(2) do |config|
       mkdir -p "${dstdir}/usr/local/etc/pkg/repos"
       echo "FreeBSD: { enabled: no }" > "${dstdir}/usr/local/etc/pkg/repos/FreeBSD.conf"
       echo "#{$package_set}: { url: https://packages.pluspunkthosting.de/packages/#{$package_version}-#{$package_set}, enabled: yes, mirror_type: NONE }" > "${dstdir}/usr/local/etc/pkg/repos/#{$package_set}.conf"
-      echo "common: { url: https://packages.pluspunkthosting.de/packages/#{$package_version}-common, enabled: no, mirror_type: NONE }" > "${dstdir}/usr/local/etc/pkg/repos/common.conf"
       chroot "${dstdir}" pkg update
       chroot "${dstdir}" pkg upgrade
       chroot "${dstdir}" pkg install sudo bash virtualbox-ose-additions python
@@ -157,6 +156,7 @@ Vagrant.configure(2) do |config|
 
       # clean up
       rm -f "${dstdir}/etc/resolv.conf"
+      rm -rf "${dstdir}/usr/local/etc/pkg"
     done
 
     # copy config files for ZFS box
