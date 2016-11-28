@@ -10,7 +10,7 @@ Vagrant.configure(2) do |config|
   $freebsd_version = '10.3'
 
   # Wich pkg repo to use
-  $package_version = '102-2016Q3'
+  $package_version = '102-2016Q4'
   $package_set = 'ap22-php56'
 
   # Target disk specification
@@ -142,7 +142,7 @@ Vagrant.configure(2) do |config|
       echo "#{$package_set}: { url: https://packages.pluspunkthosting.de/packages/#{$package_version}-#{$package_set}, enabled: yes, mirror_type: NONE }" > "${dstdir}/usr/local/etc/pkg/repos/#{$package_set}.conf"
       chroot "${dstdir}" pkg update
       chroot "${dstdir}" pkg upgrade
-      chroot "${dstdir}" pkg install sudo bash virtualbox-ose-additions python
+      chroot "${dstdir}" pkg install sudo bash virtualbox-ose-additions python2
 
       # create and configure vagrant user
       echo "%vagrant ALL=(ALL) NOPASSWD: ALL" > "${dstdir}/usr/local/etc/sudoers.d/vagrant"
