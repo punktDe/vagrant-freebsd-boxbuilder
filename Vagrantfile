@@ -1,17 +1,19 @@
 Vagrant.configure(2) do |config|
 
   # Which box to use for building
-  $build_box = 'freebsd/FreeBSD-10.3-RELEASE'
+  $build_box = 'freebsd/FreeBSD-11.0-STABLE'
 
   # How many cores to use
   $build_cores = 4
 
   # Which FreeBSD version to install in target box
-  $freebsd_version = '10.3'
+  $freebsd_version = '11.0'
 
   # Wich pkg repo to use
-  $package_version = '102-2016Q4'
-  $package_set = 'ap22-php56'
+  $package_version = '110-2017Q1'
+  $package_set = 'ap24-php70'
+  # minimal packages necessary to run Vagrant and Ansible
+  $package_list = 'sudo bash virtualbox-ose-additions python27'
 
   # Target disk specification
   #
@@ -77,9 +79,15 @@ Vagrant.configure(2) do |config|
   # Real work starts here
   config.vm.provision "shell", inline: <<-SHELL
 
+    # let pkg(8) run on autopilot
+    export ASSUME_ALWAYS_YES="yes"
+
+    # install root certificates
+    pkg install ca_root_nss
+
     # fetch and update FreeBSD source code
     ln -sf ../../bin/svnlite /usr/local/bin/svn
-    test -f /usr/src/UPDATING || svn co "svn://svn0.eu.freebsd.org/base/releng/#{$freebsd_version}" /usr/src
+    test -f /usr/src/UPDATING || svn co "https://svn.freebsd.org/base/releng/#{$freebsd_version}" /usr/src
     echo "SVN_UPDATE=		yes" > /etc/make.conf
     cd /usr/src && make update
     cp /var/vagrant/files/VIMAGE /usr/src/sys/amd64/conf
@@ -127,8 +135,6 @@ Vagrant.configure(2) do |config|
     newfs /dev/#{$ufs_disk_device}p3
     mount /dev/#{$ufs_disk_device}p3 /mnt
 
-    export ASSUME_ALWAYS_YES="yes"
-
     for dstdir in /zroot /mnt
     do
       # install FreeBSD
@@ -142,7 +148,7 @@ Vagrant.configure(2) do |config|
       echo "#{$package_set}: { url: https://packages.pluspunkthosting.de/packages/#{$package_version}-#{$package_set}, enabled: yes, mirror_type: NONE }" > "${dstdir}/usr/local/etc/pkg/repos/#{$package_set}.conf"
       chroot "${dstdir}" pkg update
       chroot "${dstdir}" pkg upgrade
-      chroot "${dstdir}" pkg install sudo bash virtualbox-ose-additions python2
+      chroot "${dstdir}" pkg install #{$package_list}
 
       # create and configure vagrant user
       echo "%vagrant ALL=(ALL) NOPASSWD: ALL" > "${dstdir}/usr/local/etc/sudoers.d/vagrant"
@@ -152,28 +158,23 @@ Vagrant.configure(2) do |config|
       chmod 700 "${dstdir}/home/vagrant/.ssh"
       touch "${dstdir}/home/vagrant/.ssh/authorized_keys"
       chroot "${dstdir}" chown -R vagrant:vagrant /home/vagrant
-      chroot "${dstdir}" fetch -o /home/vagrant/.ssh/authorized_keys https://raw.github.com/mitchellh/vagrant/master/keys/vagrant.pub
+      cat /var/vagrant/files/vagrant.pub >"${dstdir}/home/vagrant/.ssh/authorized_keys"
 
       # clean up
       rm -f "${dstdir}/etc/resolv.conf"
       rm -rf "${dstdir}/usr/local/etc/pkg"
-    done
 
-    # copy config files for ZFS box
-    cp /var/vagrant/files/zfs/fstab /zroot/etc
-    cp /var/vagrant/files/zfs/rc.conf /zroot/etc
-    cp /var/vagrant/files/zfs/loader.conf /zroot/boot
+      # copy config files
+      cp /var/vagrant/files${dstdir}/fstab ${dstdir}/etc
+      cp /var/vagrant/files${dstdir}/rc.conf ${dstdir}/etc
+      cp /var/vagrant/files${dstdir}/loader.conf ${dstdir}/boot
+    done
 
     # finish ZFS setup and unmount disk
     mkdir -p /zroot/boot/zfs
     cp /var/tmp/zpool.cache /zroot/boot/zfs/zpool.cache
     zfs umount -a
     zfs set mountpoint=legacy zroot
-
-    # copy config files for UFS box
-    cp /var/vagrant/files/ufs/fstab /mnt/etc
-    cp /var/vagrant/files/ufs/rc.conf /mnt/etc
-    cp /var/vagrant/files/ufs/loader.conf /mnt/boot
 
     # unmount UFS disk
     umount /mnt
