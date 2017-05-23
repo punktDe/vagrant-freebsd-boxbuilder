@@ -1,9 +1,7 @@
 Vagrant.configure(2) do |config|
 
   # Which box to use for building
-  # XXX - Change this once the boxes with new nomenclature are online
-  $build_box = "punktde/freebsd-ufs-110"
-  $build_box_url = "http://devel.intern.punkt.de/vboxes/base-boxes/freebsd-#{$freebsd_version}-ufs.json"
+  $build_box = "punktde/freebsd-110-ufs"
 
   # How many cores to use
   $build_cores = 4
@@ -158,13 +156,13 @@ Vagrant.configure(2) do |config|
       chroot "${dstdir}" sh -c 'echo "*" | pw useradd -n vagrant -s /usr/local/bin/bash -m -G wheel -H 0'
       mkdir "${dstdir}/home/vagrant/.ssh"
       chmod 700 "${dstdir}/home/vagrant/.ssh"
-      touch "${dstdir}/home/vagrant/.ssh/authorized_keys"
-      chroot "${dstdir}" chown -R vagrant:vagrant /home/vagrant
       cat /var/vagrant/files/vagrant.pub >"${dstdir}/home/vagrant/.ssh/authorized_keys"
+      chroot "${dstdir}" chown -R vagrant:vagrant /home/vagrant
 
       # clean up
       rm -f "${dstdir}/etc/resolv.conf"
       rm -rf "${dstdir}/usr/local/etc/pkg"
+      rm -rf "${dstdir}/var/cache/pkg/*"
 
       # copy config files
       cp /var/vagrant/files${dstdir}/fstab ${dstdir}/etc
