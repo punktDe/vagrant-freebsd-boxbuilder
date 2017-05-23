@@ -1,7 +1,9 @@
 Vagrant.configure(2) do |config|
 
   # Which box to use for building
-  $build_box = 'freebsd/FreeBSD-11.0-STABLE'
+  # XXX - Change this once the boxes with new nomenclature are online
+  $build_box = "punktde/freebsd-ufs-110"
+  $build_box_url = "http://devel.intern.punkt.de/vboxes/base-boxes/freebsd-#{$freebsd_version}-ufs.json"
 
   # How many cores to use
   $build_cores = 4
@@ -10,25 +12,28 @@ Vagrant.configure(2) do |config|
   $freebsd_version = '11.0'
 
   # Wich pkg repo to use
-  $package_version = '110-2017Q1'
+  $package_version = '2017Q2'
   $package_set = 'ap24-php70'
+
+  $package_repo = $freebsd_version.gsub(/\./, '') + "-#{$package_version}-#{$package_set}"
+
   # minimal packages necessary to run Vagrant and Ansible
-  $package_list = 'sudo bash virtualbox-ose-additions python27'
+  $initial_package_list = 'sudo bash virtualbox-ose-additions python27'
 
   # Target disk specification
   #
   # * Disk size and swap size in megabytes
   # * Controller must match config of build box from Hashicorp
   # * Device depends on build box, too
-  $disk_controller = 'IDE Controller'
+  $disk_controller = 'LsiLogic'
 
-  $zfs_disk_size = 20 * 1024
+  $zfs_disk_size = 60 * 1024
   $zfs_swap_size = 4096
-  $zfs_disk_device = 'ada1'
+  $zfs_disk_device = 'da1'
 
-  $ufs_disk_size = 20 * 1024
+  $ufs_disk_size = 60 * 1024
   $ufs_swap_size = 4096
-  $ufs_disk_device = 'ada2'
+  $ufs_disk_device = 'da2'
 
   # how far to seek to the end of the device to erase GPT information
   $zfs_disk_seek = $zfs_disk_size * 2048 - 34
@@ -49,10 +54,6 @@ Vagrant.configure(2) do |config|
   # boxes at https://atlas.hashicorp.com/search.
   config.vm.box = $build_box
 
-  # Increase the boot timeout for first start of the build box.
-  # Hashicorp run freebsd-update on start which may take a long time.
-  config.vm.boot_timeout = 600
-
   # Create a private network, which allows host-only access to the machine
   # using a specific IP.
   config.vm.network "private_network", ip: $virtual_machine_ip
@@ -67,13 +68,13 @@ Vagrant.configure(2) do |config|
       vb.customize ['closemedium', 'zfs.vmdk', '--delete']
     end
     if File.exist?('ufs.vmdk')
-      vb.customize ['storageattach', :id,  '--storagectl', $disk_controller, '--port', 1, '--device', 1, '--type', 'hdd', '--medium', 'none']
+      vb.customize ['storageattach', :id,  '--storagectl', $disk_controller, '--port', 2, '--device', 0, '--type', 'hdd', '--medium', 'none']
       vb.customize ['closemedium', 'ufs.vmdk', '--delete']
     end
     vb.customize ['createhd', '--format', 'VMDK', '--filename', 'zfs.vmdk', '--variant', 'Standard', '--size', $zfs_disk_size]
     vb.customize ['storageattach', :id,  '--storagectl', $disk_controller, '--port', 1, '--device', 0, '--type', 'hdd', '--medium', 'zfs.vmdk']
     vb.customize ['createhd', '--format', 'VMDK', '--filename', 'ufs.vmdk', '--variant', 'Standard', '--size', $ufs_disk_size]
-    vb.customize ['storageattach', :id,  '--storagectl', $disk_controller, '--port', 1, '--device', 1, '--type', 'hdd', '--medium', 'ufs.vmdk']
+    vb.customize ['storageattach', :id,  '--storagectl', $disk_controller, '--port', 2, '--device', 0, '--type', 'hdd', '--medium', 'ufs.vmdk']
   end
 
   # Real work starts here
@@ -83,6 +84,7 @@ Vagrant.configure(2) do |config|
     export ASSUME_ALWAYS_YES="yes"
 
     # install root certificates
+    pkg update
     pkg install ca_root_nss
 
     # fetch and update FreeBSD source code
@@ -145,10 +147,10 @@ Vagrant.configure(2) do |config|
       chroot "${dstdir}" pkg install ca_root_nss
       mkdir -p "${dstdir}/usr/local/etc/pkg/repos"
       echo "FreeBSD: { enabled: no }" > "${dstdir}/usr/local/etc/pkg/repos/FreeBSD.conf"
-      echo "#{$package_set}: { url: https://packages.pluspunkthosting.de/packages/#{$package_version}-#{$package_set}, enabled: yes, mirror_type: NONE }" > "${dstdir}/usr/local/etc/pkg/repos/#{$package_set}.conf"
+      echo "#{$package_set}: { url: https://packages.pluspunkthosting.de/packages/#{$package_repo}-#{$package_set}, enabled: yes, mirror_type: NONE }" > "${dstdir}/usr/local/etc/pkg/repos/#{$package_set}.conf"
       chroot "${dstdir}" pkg update
       chroot "${dstdir}" pkg upgrade
-      chroot "${dstdir}" pkg install #{$package_list}
+      chroot "${dstdir}" pkg install #{$initial_package_list}
 
       # create and configure vagrant user
       echo "%vagrant ALL=(ALL) NOPASSWD: ALL" > "${dstdir}/usr/local/etc/sudoers.d/vagrant"

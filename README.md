@@ -1,5 +1,5 @@
-Vagrant project to generate FreeBSD based empty Vagrant boxes, one with ZFS, one with UFS
-=========================================================================================
+Vagrant project to generate FreeBSD based Vagrant boxes with ZFS and UFS
+========================================================================
 
 Usage
 -----
@@ -10,37 +10,39 @@ vagrant up || vagrant up
 vagrant halt
 ./package.sh
 ````
-The very first `vagrant up` may take a long time, because it runs freebsd-update - be patient.
 
 Files
 -----
 * `Vagrantfile` - how to start and provision the box
 * `files/*` - config files that are copied into the final box
-* `test/test.sh` - small test shellscript that provisions both boxes, then destroys them again
+* `test/test.sh` - small test shellscript that provisions both boxes, logs you
+ in via ssh, then destroys them again
 
 Parameters to tweak
 -------------------
 In _Vagrantfile_:
 
-* `$build_box` - which box (preferably Hashicorp's) to use for building
+* `$build_box` - which box to use for building
 * `$freebsd_version` - which FreeBSD version to install in the target boxes
-* `$package_version` - which quarterly package repository to use, e.g. "102-2016Q3"
-* `$package_set` - which package set to use, e.g. "ap22-php56"
+* `$package_version` - which quarterly package repository to use, e.g. "2017Q2"
+* `$package_set` - which package set to use, e.g. "ap24-php56"
 * `${zfs|ufs}_disk_size` - size of hard disk for respective target box
 * `${zfs|ufs}_swap_size` - swap size for respective target box
 
 How's it work?
 --------------
-* Deploy and start Hashicorp's standard FreeBSD box.
+* Deploy and start the named build box.
 * Create second and third HDD via `VBoxManage`.
 * Checkout (first run) or update (consecutive runs) FreeBSD source tree.
 * Compile userland and kernel if necessary (with VIMAGE support).
 * Create ZFS, install, add config files and `vagrant` user on second hard disk.
 * Create UFS, [...] on third hard disk.
-* Install some packages from standard FreeBSD repository on both disks.
-* Use `vagrant halt` followed by `package.sh` script to create `.box` files from disk images.
+* Install some packages from our repository on both disks.
+* Use `vagrant halt` followed by `package.sh` script to create `.box` files from
+ disk images.
 
 Useful stuff
 ------------
-* On subsequent `vagrant provision` runs the compile stage is skipped if there are no changes to `/usr/src/UPDATING`.
+* On subsequent `vagrant provision` runs the compile stage is skipped if there
+ are no changes to `/usr/src/UPDATING`.
 * When making changes, shutdown via `vagrant halt` before each new `vagrant provision`.
