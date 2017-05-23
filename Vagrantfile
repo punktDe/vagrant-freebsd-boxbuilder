@@ -147,7 +147,7 @@ Vagrant.configure(2) do |config|
       chroot "${dstdir}" pkg install ca_root_nss
       mkdir -p "${dstdir}/usr/local/etc/pkg/repos"
       echo "FreeBSD: { enabled: no }" > "${dstdir}/usr/local/etc/pkg/repos/FreeBSD.conf"
-      echo "#{$package_set}: { url: https://packages.pluspunkthosting.de/packages/#{$package_repo}-#{$package_set}, enabled: yes, mirror_type: NONE }" > "${dstdir}/usr/local/etc/pkg/repos/#{$package_set}.conf"
+      echo "#{$package_set}: { url: https://packages.pluspunkthosting.de/packages/#{$package_repo}, enabled: yes, mirror_type: NONE }" > "${dstdir}/usr/local/etc/pkg/repos/#{$package_set}.conf"
       chroot "${dstdir}" pkg update
       chroot "${dstdir}" pkg upgrade
       chroot "${dstdir}" pkg install #{$initial_package_list}

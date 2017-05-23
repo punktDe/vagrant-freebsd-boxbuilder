@@ -1,7 +1,9 @@
 #! /bin/sh
 
 BASE_DIR=`pwd`/tmp
-BOX_BASENAME="punktde-freebsd"
+
+VERSION=`grep ' $freebsd_version =' Vagrantfile | sed -e "s/^[^']*'//" -e "s/'$//" -e "s/\.//"`
+BOX_BASENAME="freebsd-${VERSION}"
 
 mkdir -p "${BASE_DIR}"
 
