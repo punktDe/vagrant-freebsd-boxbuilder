@@ -9,11 +9,12 @@ Vagrant.configure(2) do |config|
   # Which FreeBSD version to install in target box
   $freebsd_version = '11.0'
 
-  # Wich pkg repo to use
-  $package_version = '2017Q2'
+  # Wich package repo to use (in target box)
+  $package_base = '110'
+  $package_version = '2017Q3'
   $package_set = 'ap24-php70'
 
-  $package_repo = $freebsd_version.gsub(/\./, '') + "-#{$package_version}-#{$package_set}"
+  $package_repo = "https://packages.pluspunkthosting.de/packages/#{$package_base}-#{$package_version}-#{$package_set}/"
 
   # minimal packages necessary to run Vagrant and Ansible
   $initial_package_list = 'sudo bash virtualbox-ose-additions python27'
@@ -78,13 +79,6 @@ Vagrant.configure(2) do |config|
   # Real work starts here
   config.vm.provision "shell", inline: <<-SHELL
 
-    # let pkg(8) run on autopilot
-    export ASSUME_ALWAYS_YES="yes"
-
-    # install root certificates
-    pkg update
-    pkg install ca_root_nss
-
     # fetch and update FreeBSD source code
     ln -sf ../../bin/svnlite /usr/local/bin/svn
     test -f /usr/src/UPDATING || svn co "https://svn.freebsd.org/base/releng/#{$freebsd_version}" /usr/src
@@ -140,14 +134,13 @@ Vagrant.configure(2) do |config|
       # install FreeBSD
       cd /usr/src && make "DESTDIR=${dstdir}" KERNCONF=VIMAGE installworld installkernel distribution
 
-      # install some necessary packages
-      cp /etc/resolv.conf "${dstdir}/etc"
-      chroot "${dstdir}" pkg install ca_root_nss
+      # install packages
+      cp /etc/resolv.conf "${dstdir}/etc/resolv.conf"
+      export ASSUME_ALWAYS_YES="yes"
+      chroot "${dstdir}" pkg install pkg ca_root_nss
       mkdir -p "${dstdir}/usr/local/etc/pkg/repos"
       echo "FreeBSD: { enabled: no }" > "${dstdir}/usr/local/etc/pkg/repos/FreeBSD.conf"
-      echo "#{$package_set}: { url: https://packages.pluspunkthosting.de/packages/#{$package_repo}, enabled: yes, mirror_type: NONE }" > "${dstdir}/usr/local/etc/pkg/repos/#{$package_set}.conf"
-      chroot "${dstdir}" pkg update
-      chroot "${dstdir}" pkg upgrade
+      echo "punkt.de: { url: #{$package_repo}, enabled: yes, mirror_type: NONE }" > "${dstdir}/usr/local/etc/pkg/repos/punkt.de.conf"
       chroot "${dstdir}" pkg install #{$initial_package_list}
 
       # create and configure vagrant user
@@ -159,15 +152,13 @@ Vagrant.configure(2) do |config|
       cat /var/vagrant/files/vagrant.pub >"${dstdir}/home/vagrant/.ssh/authorized_keys"
       chroot "${dstdir}" chown -R vagrant:vagrant /home/vagrant
 
-      # clean up
-      rm -f "${dstdir}/etc/resolv.conf"
-      rm -rf "${dstdir}/usr/local/etc/pkg"
-      rm -rf "${dstdir}/var/cache/pkg/*"
-
       # copy config files
       cp /var/vagrant/files${dstdir}/fstab ${dstdir}/etc
       cp /var/vagrant/files${dstdir}/rc.conf ${dstdir}/etc
       cp /var/vagrant/files${dstdir}/loader.conf ${dstdir}/boot
+
+      # clean up
+      rm -f "${dstdir}/etc/resolv.conf"
     done
 
     # finish ZFS setup and unmount disk
