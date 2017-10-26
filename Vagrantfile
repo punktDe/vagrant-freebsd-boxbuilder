@@ -1,17 +1,17 @@
 Vagrant.configure(2) do |config|
 
   # Which box to use for building
-  $build_box = "punktde/freebsd-110-ufs"
+  $build_box = "punktde/freebsd-111-ufs"
 
   # How many cores to use
   $build_cores = 4
 
   # Which FreeBSD version to install in target box
-  $freebsd_version = '11.0'
+  $freebsd_version = '11.1'
 
   # Wich package repo to use (in target box)
-  $package_base = '110'
-  $package_version = '2017Q3'
+  $package_base = '111'
+  $package_version = '2017Q4'
   $package_set = 'ap24-php70'
 
   $package_repo = "https://packages.pluspunkthosting.de/packages/#{$package_base}-#{$package_version}-#{$package_set}/"
