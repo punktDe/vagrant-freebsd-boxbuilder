@@ -11,8 +11,8 @@ Vagrant.configure(2) do |config|
 
   # Wich package repo to use (in target box)
   $package_base = '111'
-  $package_version = '2017Q4'
-  $package_set = 'ap24-php70'
+  $package_version = '2018Q1'
+  $package_set = 'basic'
 
   $package_repo = "https://packages.pluspunkthosting.de/packages/#{$package_base}-#{$package_version}-#{$package_set}/"
 
