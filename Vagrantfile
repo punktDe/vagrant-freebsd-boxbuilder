@@ -7,17 +7,10 @@ Vagrant.configure(2) do |config|
   $build_cores = 4
 
   # Which FreeBSD version to install in target box
-  $freebsd_version = '11.1'
-
-  # Wich package repo to use (in target box)
-  $package_base = '111'
-  $package_version = '2018Q1'
-  $package_set = 'basic'
-
-  $package_repo = "https://packages.pluspunkthosting.de/packages/#{$package_base}-#{$package_version}-#{$package_set}/"
+  $freebsd_version = '11.2'
 
   # minimal packages necessary to run Vagrant and Ansible
-  $initial_package_list = 'sudo bash virtualbox-ose-additions python27'
+  $initial_package_list = 'sudo bash virtualbox-ose-additions-nox11 python2 python3'
 
   # Target disk specification
   #
@@ -138,9 +131,6 @@ Vagrant.configure(2) do |config|
       cp /etc/resolv.conf "${dstdir}/etc/resolv.conf"
       export ASSUME_ALWAYS_YES="yes"
       chroot "${dstdir}" pkg install pkg ca_root_nss
-      mkdir -p "${dstdir}/usr/local/etc/pkg/repos"
-      echo "FreeBSD: { enabled: no }" > "${dstdir}/usr/local/etc/pkg/repos/FreeBSD.conf"
-      echo "punkt.de: { url: #{$package_repo}, enabled: yes, mirror_type: NONE }" > "${dstdir}/usr/local/etc/pkg/repos/punkt.de.conf"
       chroot "${dstdir}" pkg install #{$initial_package_list}
 
       # create and configure vagrant user
