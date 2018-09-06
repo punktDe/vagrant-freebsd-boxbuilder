@@ -1,7 +1,7 @@
 Vagrant.configure(2) do |config|
 
   # Which box to use for building
-  $build_box = "punktde/freebsd-111-ufs"
+  $build_box = "punktde/freebsd-112-ufs"
 
   # How many cores to use
   $build_cores = 4
