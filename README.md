@@ -6,7 +6,7 @@ Usage
 ````
 git clone git@gitlab.pluspunkthosting.de:devops/vagrant-freebsd-boxbuilder.git
 cd vagrant-freebsd-boxbuilder
-vagrant up || vagrant up
+vagrant up
 vagrant halt
 ./package.sh
 ````
@@ -24,8 +24,6 @@ In _Vagrantfile_:
 
 * `$build_box` - which box to use for building
 * `$freebsd_version` - which FreeBSD version to install in the target boxes
-* `$package_version` - which quarterly package repository to use, e.g. "2017Q2"
-* `$package_set` - which package set to use, e.g. "ap24-php56"
 * `${zfs|ufs}_disk_size` - size of hard disk for respective target box
 * `${zfs|ufs}_swap_size` - swap size for respective target box
 
@@ -37,7 +35,7 @@ How's it work?
 * Compile userland and kernel if necessary (with VIMAGE support).
 * Create ZFS, install, add config files and `vagrant` user on second hard disk.
 * Create UFS, [...] on third hard disk.
-* Install some packages from our repository on both disks.
+* Install some packages both disks.
 * Use `vagrant halt` followed by `package.sh` script to create `.box` files from
  disk images.
 
