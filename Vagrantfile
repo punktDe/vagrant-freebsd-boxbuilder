@@ -35,9 +35,6 @@ Vagrant.configure(2) do |config|
   $vagrant_mount_path = '/var/vagrant'
   $virtual_machine_ip = '10.20.30.193'
 
-  # Use proper shell
-  config.ssh.shell = 'sh'
-
   # Use NFS instead of folder sharing
   config.vm.synced_folder ".", "/vagrant", id: "vagrant-root", disabled: true
   config.vm.synced_folder ".", "#{$vagrant_mount_path}", :nfs => true, :nfs_version => 3
