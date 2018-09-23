@@ -35,7 +35,7 @@ How's it work?
 * Compile userland and kernel if necessary (with VIMAGE support).
 * Create ZFS, install, add config files and `vagrant` user on second hard disk.
 * Create UFS, [...] on third hard disk.
-* Install some packages both disks.
+* Install some packages on both disks.
 * Use `vagrant halt` followed by `package.sh` script to create `.box` files from
  disk images.
 
