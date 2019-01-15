@@ -10,7 +10,7 @@ Vagrant.configure(2) do |config|
   $freebsd_version = '12.0'
 
   # minimal packages necessary to run Vagrant and Ansible
-  $initial_package_list = 'sudo bash virtualbox-ose-additions-nox11 python3'
+  $initial_package_list = 'ca_root_nss sudo bash virtualbox-ose-additions-nox11 python3'
 
   # Target disk specification
   #
