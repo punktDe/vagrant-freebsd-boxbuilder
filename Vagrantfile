@@ -1,16 +1,16 @@
 Vagrant.configure(2) do |config|
 
   # Which box to use for building
-  $build_box = "punktde/freebsd-120-ufs"
+  $build_box = "punktde/freebsd-112-ufs"
 
   # How many cores to use
   $build_cores = 4
 
   # Which FreeBSD version to install in target box
-  $freebsd_version = '12.0'
+  $freebsd_version = '11.2'
 
   # minimal packages necessary to run Vagrant and Ansible
-  $initial_package_list = 'ca_root_nss sudo bash virtualbox-ose-additions-nox11 python3'
+  $initial_package_list = 'sudo bash virtualbox-ose-additions-nox11 python3'
 
   # Target disk specification
   #
@@ -104,22 +104,52 @@ Vagrant.configure(2) do |config|
     gpart add -a 1m -t freebsd-ufs #{$ufs_disk_device}
     gpart bootcode -b /boot/pmbr -p /boot/gptboot -i 1 #{$ufs_disk_device}
 
+    # create mountpoints
+    mkdir /zfs
+    mkdir /ufs
+
     # load ZFS
     kldload opensolaris
     kldload zfs
     sysctl vfs.zfs.min_auto_ashift=12
 
     # create and configure zpool
-    zpool create -f -o cachefile=/var/tmp/zpool.cache zroot gpt/root
-    zpool set bootfs=zroot zroot
-    zfs set checksum=fletcher4 zroot
-    zfs set compression=lz4 zroot
+    #
+    # create boot environment friendly layout
+    # see https://wiki.freebsd.org/RootOnZFS/GPTZFSBoot
+    zpool create -f -o cachefile=/var/tmp/zpool.cache -o altroot=/zfs zroot gpt/root
+    zfs set compression=on zroot
+
+    zfs create -o mountpoint=none                                  zroot/ROOT
+    zfs create -o mountpoint=/ -o canmount=noauto                  zroot/ROOT/default
+
+    mount -t zfs zroot/ROOT/default /zfs
+
+    zfs create -o mountpoint=/tmp  -o exec=on      -o setuid=off   zroot/tmp
+    zfs create -o canmount=off -o mountpoint=/usr                  zroot/usr
+    zfs create                     -o exec=off     -o setuid=off   zroot/usr/src
+    zfs create                                                     zroot/usr/obj
+    zfs create                                     -o setuid=off   zroot/usr/ports
+    zfs create                     -o exec=off     -o setuid=off   zroot/usr/ports/distfiles
+    zfs create                     -o exec=off     -o setuid=off   zroot/usr/ports/packages
+    zfs create -o canmount=off -o mountpoint=/var                  zroot/var
+    zfs create                     -o exec=off     -o setuid=off   zroot/var/audit
+    zfs create                     -o exec=off     -o setuid=off   zroot/var/crash
+    zfs create                     -o exec=off     -o setuid=off   zroot/var/log
+    zfs create -o atime=on         -o exec=off     -o setuid=off   zroot/var/mail
+    zfs create                     -o exec=on      -o setuid=off   zroot/var/tmp
+    zfs create -o mountpoint=/home                                 zroot/home
+
+    chmod 1777 /zfs/var/tmp
+    chmod 1777 /zfs/tmp
+
+    zpool set bootfs=zroot/ROOT/default zroot
 
     # create and mount UFS filesystem
     newfs /dev/#{$ufs_disk_device}p3
-    mount /dev/#{$ufs_disk_device}p3 /mnt
+    mount /dev/#{$ufs_disk_device}p3 /ufs
 
-    for dstdir in /zroot /mnt
+    for dstdir in /zfs /ufs
     do
       # install FreeBSD
       cd /usr/src && make "DESTDIR=${dstdir}" KERNCONF=VIMAGE installworld installkernel distribution
@@ -149,12 +179,11 @@ Vagrant.configure(2) do |config|
     done
 
     # finish ZFS setup and unmount disk
-    mkdir -p /zroot/boot/zfs
-    cp /var/tmp/zpool.cache /zroot/boot/zfs/zpool.cache
+    mkdir -p /zfs/boot/zfs
+    cp /var/tmp/zpool.cache /zfs/boot/zfs/zpool.cache
     zfs umount -a
-    zfs set mountpoint=legacy zroot
 
     # unmount UFS disk
-    umount /mnt
+    umount /ufs
   SHELL
 end
