@@ -1,16 +1,21 @@
-include	GENERIC
+include		GENERIC
 
-ident	VIMAGE
+ident		VIMAGE
 
 #
 # Virtual networking for jails
 #
-options	VIMAGE
+options		VIMAGE
 
 #
 # Firewall default to accept everything
 #
-options	IPFIREWALL
-options	IPFIREWALL_VERBOSE
-options	IPFIREWALL_VERBOSE_LIMIT=100
-options	IPFIREWALL_DEFAULT_TO_ACCEPT
+options		IPFIREWALL
+options		IPFIREWALL_VERBOSE
+options		IPFIREWALL_VERBOSE_LIMIT=100
+options		IPFIREWALL_DEFAULT_TO_ACCEPT
+
+#
+# Don't build kernel with debug symbols
+#
+nomakeoptions	DEBUG
