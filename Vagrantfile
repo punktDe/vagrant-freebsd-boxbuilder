@@ -73,6 +73,7 @@ Vagrant.configure(2) do |config|
     ln -sf ../../bin/svnlite /usr/local/bin/svn
     test -f /usr/src/UPDATING || svn co "https://svn.freebsd.org/base/releng/#{$freebsd_version}" /usr/src
     echo "SVN_UPDATE=		yes" > /etc/make.conf
+    echo "WITHOUT_DEBUG_FILES=	yes" > /etc/src.conf
     cd /usr/src && make update
     cp /var/vagrant/files/VIMAGE /usr/src/sys/amd64/conf
 
