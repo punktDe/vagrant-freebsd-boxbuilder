@@ -44,3 +44,14 @@ Useful stuff
 * On subsequent `vagrant provision` runs the compile stage is skipped if there
  are no changes to `/usr/src/UPDATING`.
 * When making changes, shutdown via `vagrant halt` before each new `vagrant provision`.
+
+Major Version Upgrade
+---------------------
+* Keep e.g. 11.2 as the `$build_box` and set `$freebsd_version` to 12.0
+* Build the project - this will lead to a 12.0 box with 11.2 packages installed
+* Use this box as the new `$build_box` and build again
+* XXX - This might fail if a `mergemaster -p` is required. To remedy:
+    * SSH into the box, run `mergemaster -p`
+    * `vagrant halt`
+    * `vagrant up`
+    * `vagrant provision`
