@@ -39,6 +39,9 @@ Vagrant.configure(2) do |config|
   config.vm.synced_folder ".", "/vagrant", id: "vagrant-root", disabled: true
   config.vm.synced_folder ".", "#{$vagrant_mount_path}", :nfs => true, :nfs_version => 3
 
+  # Enable SSH keepalive to work around https://github.com/hashicorp/vagrant/issues/516
+  config.ssh.keep_alive = true
+
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://atlas.hashicorp.com/search.
   config.vm.box = $build_box
