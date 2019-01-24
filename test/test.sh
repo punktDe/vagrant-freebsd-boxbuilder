@@ -9,7 +9,7 @@ vagrant destroy -f || true
 vagrant box add --name punktde/zfs-test "../freebsd-${VERSION}-zfs.box"
 vagrant box add --name punktde/ufs-test "../freebsd-${VERSION}-ufs.box"
 
-for fs in ZFS UFS
+for fs in zfs ufs
 do
 	ln -sf Vagrantfile.${fs} Vagrantfile
 	vagrant up
