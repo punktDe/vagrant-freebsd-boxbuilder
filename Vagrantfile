@@ -164,8 +164,10 @@ Vagrant.configure(2) do |config|
       pkg -r "${dstdir}" install #{$initial_package_list}
 
       # create and configure vagrant user
+      echo "#includedir /usr/local/etc/sudoers.d" > "${dstdir}/usr/local/etc/sudoers"
+      chmod 440 "${dstdir}/usr/local/etc/sudoers"
       echo "%vagrant ALL=(ALL) NOPASSWD: ALL" > "${dstdir}/usr/local/etc/sudoers.d/vagrant"
-      chmod 640 "${dstdir}/usr/local/etc/sudoers.d/vagrant"
+      chmod 440 "${dstdir}/usr/local/etc/sudoers.d/vagrant"
       pw -R "${dstdir}" groupadd -n vagrant -g 1001
       echo "*" | pw -R "${dstdir}" useradd -n vagrant -u 1001 -s /usr/local/bin/bash -m -g 1001 -G wheel -H 0
       mkdir "${dstdir}/home/vagrant/.ssh"
@@ -177,7 +179,6 @@ Vagrant.configure(2) do |config|
       cp "/var/vagrant/files${dstdir}/fstab" "${dstdir}/etc"
       cp "/var/vagrant/files${dstdir}/rc.conf" "${dstdir}/etc"
       cp "/var/vagrant/files${dstdir}/loader.conf" "${dstdir}/boot"
-      cp "/var/vagrant/files/sudoers" "${dstdir}/usr/local/etc" && chmod 440 "${dstdir}/usr/local/etci/sudoers"
     done
 
     # finish ZFS setup and unmount disk
