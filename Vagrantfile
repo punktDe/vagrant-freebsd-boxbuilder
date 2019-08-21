@@ -1,7 +1,7 @@
 Vagrant.configure(2) do |config|
 
   # Which box to use for building
-  $build_box = "punktde/freebsd-112-ufs"
+  $build_box = 'punktde/freebsd-112-ufs'
 
   # How many cores to use
   $build_cores = 4
@@ -36,8 +36,8 @@ Vagrant.configure(2) do |config|
   $virtual_machine_ip = '10.20.30.193'
 
   # Use NFS instead of folder sharing
-  config.vm.synced_folder ".", "/vagrant", id: "vagrant-root", disabled: true
-  config.vm.synced_folder ".", "#{$vagrant_mount_path}", :nfs => true, :nfs_version => 3
+  config.vm.synced_folder '.', '/vagrant', id: 'vagrant-root', disabled: true
+  config.vm.synced_folder '.', "#{$vagrant_mount_path}", :nfs => true, :nfs_version => 3
 
   # Enable SSH keepalive to work around https://github.com/hashicorp/vagrant/issues/516
   config.ssh.keep_alive = true
@@ -48,11 +48,11 @@ Vagrant.configure(2) do |config|
 
   # Create a private network, which allows host-only access to the machine
   # using a specific IP.
-  config.vm.network "private_network", ip: $virtual_machine_ip
+  config.vm.network 'private_network', ip: $virtual_machine_ip
 
   # Customize build VB settings
-  config.vm.provider "virtualbox" do |vb|
-    vb.memory = "4096"
+  config.vm.provider 'virtualbox' do |vb|
+    vb.memory = 4096
     vb.cpus = $build_cores
 
     if File.exist?('zfs.vmdk')
@@ -70,13 +70,13 @@ Vagrant.configure(2) do |config|
   end
 
   # Real work starts here
-  config.vm.provision "shell", inline: <<-SHELL
+  config.vm.provision 'shell', inline: <<-SHELL
 
     # fetch and update FreeBSD source code
     ln -sf ../../bin/svnlite /usr/local/bin/svn
     test -f /usr/src/UPDATING || svn co "https://svn.freebsd.org/base/releng/#{$freebsd_version}" /usr/src
-    echo "SVN_UPDATE=		yes" > /etc/make.conf
-    echo "WITHOUT_DEBUG_FILES=	yes" > /etc/src.conf
+    echo 'SVN_UPDATE=		yes' > /etc/make.conf
+    echo 'WITHOUT_DEBUG_FILES=	yes' > /etc/src.conf
     cd /usr/src && make update
     cp /var/vagrant/files/VIMAGE /usr/src/sys/amd64/conf
 
@@ -130,13 +130,13 @@ Vagrant.configure(2) do |config|
     mount -t zfs zroot/ROOT/default /zfs
 
     zfs create -o mountpoint=/tmp  -o exec=on      -o setuid=off   zroot/tmp
-    zfs create -o canmount=off -o mountpoint=/usr                  zroot/usr
+    zfs create -o mountpoint=/usr  -o canmount=off                 zroot/usr
     zfs create                     -o exec=off     -o setuid=off   zroot/usr/src
     zfs create                                                     zroot/usr/obj
     zfs create                                     -o setuid=off   zroot/usr/ports
     zfs create                     -o exec=off     -o setuid=off   zroot/usr/ports/distfiles
     zfs create                     -o exec=off     -o setuid=off   zroot/usr/ports/packages
-    zfs create -o canmount=off -o mountpoint=/var                  zroot/var
+    zfs create -o mountpoint=/var  -o canmount=off                 zroot/var
     zfs create                     -o exec=off     -o setuid=off   zroot/var/audit
     zfs create                     -o exec=off     -o setuid=off   zroot/var/crash
     zfs create                     -o exec=off     -o setuid=off   zroot/var/log
@@ -159,27 +159,24 @@ Vagrant.configure(2) do |config|
       cd /usr/src && make "DESTDIR=${dstdir}" KERNCONF=VIMAGE installworld installkernel distribution
 
       # install packages
-      cp /etc/resolv.conf "${dstdir}/etc/resolv.conf"
       export ASSUME_ALWAYS_YES="yes"
-      chroot "${dstdir}" pkg install pkg ca_root_nss
-      chroot "${dstdir}" pkg install #{$initial_package_list}
+      pkg -r "${dstdir}" install pkg ca_root_nss
+      pkg -r "${dstdir}" install #{$initial_package_list}
 
       # create and configure vagrant user
       echo "%vagrant ALL=(ALL) NOPASSWD: ALL" > "${dstdir}/usr/local/etc/sudoers.d/vagrant"
       chmod 640 "${dstdir}/usr/local/etc/sudoers.d/vagrant"
-      chroot "${dstdir}" sh -c 'echo "*" | pw useradd -n vagrant -s /usr/local/bin/bash -m -G wheel -H 0'
+      pw -R "${dstdir}" groupadd -n vagrant -g 1001
+      echo "*" | pw -R "${dstdir}" useradd -n vagrant -u 1001 -s /usr/local/bin/bash -m -g 1001 -G wheel -H 0
       mkdir "${dstdir}/home/vagrant/.ssh"
       chmod 700 "${dstdir}/home/vagrant/.ssh"
-      cat /var/vagrant/files/vagrant.pub >"${dstdir}/home/vagrant/.ssh/authorized_keys"
-      chroot "${dstdir}" chown -R vagrant:vagrant /home/vagrant
+      cp /var/vagrant/files/vagrant.pub "${dstdir}/home/vagrant/.ssh/authorized_keys"
+      chown -R 1001:1001 "${dstdir}/home/vagrant"
 
       # copy config files
-      cp /var/vagrant/files${dstdir}/fstab ${dstdir}/etc
-      cp /var/vagrant/files${dstdir}/rc.conf ${dstdir}/etc
-      cp /var/vagrant/files${dstdir}/loader.conf ${dstdir}/boot
-
-      # clean up
-      rm -f "${dstdir}/etc/resolv.conf"
+      cp "/var/vagrant/files${dstdir}/fstab" "${dstdir}/etc"
+      cp "/var/vagrant/files${dstdir}/rc.conf" "${dstdir}/etc"
+      cp "/var/vagrant/files${dstdir}/loader.conf" "${dstdir}/boot"
     done
 
     # finish ZFS setup and unmount disk
