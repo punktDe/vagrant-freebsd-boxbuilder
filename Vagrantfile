@@ -177,6 +177,7 @@ Vagrant.configure(2) do |config|
       cp "/var/vagrant/files${dstdir}/fstab" "${dstdir}/etc"
       cp "/var/vagrant/files${dstdir}/rc.conf" "${dstdir}/etc"
       cp "/var/vagrant/files${dstdir}/loader.conf" "${dstdir}/boot"
+      cp "/var/vagrant/files/sudoers" "${dstdir}/usr/local/etc" && chmod 440 "${dstdir}/usr/local/etci/sudoers"
     done
 
     # finish ZFS setup and unmount disk
