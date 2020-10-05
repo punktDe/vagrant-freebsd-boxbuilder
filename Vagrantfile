@@ -1,13 +1,13 @@
 Vagrant.configure(2) do |config|
 
   # Which box to use for building
-  $build_box = 'punktde/freebsd-120-ufs'
+  $build_box = 'punktde/freebsd-122-ufs'
 
   # How many cores to use
   $build_cores = 4
 
   # Which FreeBSD version to install in target box
-  $freebsd_version = '12.0'
+  $freebsd_version = '12.2'
 
   # minimal packages necessary to run Vagrant and Ansible
   $initial_package_list = 'sudo bash virtualbox-ose-additions-nox11 python3'
@@ -78,14 +78,13 @@ Vagrant.configure(2) do |config|
     echo 'SVN_UPDATE=		yes' > /etc/make.conf
     echo 'WITHOUT_DEBUG_FILES=	yes' > /etc/src.conf
     cd /usr/src && make update
-    cp /var/vagrant/files/VIMAGE /usr/src/sys/amd64/conf
 
     # check if source changed and rebuild everything if necessary
     if [ ! -f /usr/obj/usr/src/bin/freebsd-version/freebsd-version -o /usr/src/UPDATING -nt /usr/obj/usr/src/bin/freebsd-version/freebsd-version ]
     then
       chflags -R noschg /usr/obj
       rm -rf /usr/obj
-      cd /usr/src && make -j #{$build_cores} KERNCONF=VIMAGE buildworld buildkernel
+      cd /usr/src && make -j #{$build_cores} buildworld buildkernel
     fi
 
     # erase target disks
@@ -142,7 +141,7 @@ Vagrant.configure(2) do |config|
     zfs create                     -o exec=off     -o setuid=off   zroot/var/log
     zfs create -o atime=on         -o exec=off     -o setuid=off   zroot/var/mail
     zfs create                     -o exec=on      -o setuid=off   zroot/var/tmp
-    zfs create -o mountpoint=/home                                 zroot/home
+    zfs create -o mountpoint=/home                                 zroot/usr/home
 
     chmod 1777 /zfs/var/tmp
     chmod 1777 /zfs/tmp
@@ -156,7 +155,7 @@ Vagrant.configure(2) do |config|
     for dstdir in /zfs /ufs
     do
       # install FreeBSD
-      cd /usr/src && make "DESTDIR=${dstdir}" KERNCONF=VIMAGE installworld installkernel distribution
+      cd /usr/src && make "DESTDIR=${dstdir}" installworld installkernel distribution
 
       # install packages
       export ASSUME_ALWAYS_YES="yes"
