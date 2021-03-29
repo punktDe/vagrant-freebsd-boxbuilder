@@ -77,6 +77,7 @@ Vagrant.configure(2) do |config|
     test -f /usr/src/UPDATING || svn co "https://svn.freebsd.org/base/releng/#{$freebsd_version}" /usr/src
     echo 'SVN_UPDATE=		yes' > /etc/make.conf
     echo 'WITHOUT_DEBUG_FILES=	yes' > /etc/src.conf
+    echo 'WITHOUT_TESTS=	yes' >> /etc/src.conf
     cd /usr/src && make update
 
     # check if source changed and rebuild everything if necessary
