@@ -72,13 +72,13 @@ Vagrant.configure(2) do |config|
   # Real work starts here
   config.vm.provision 'shell', inline: <<-SHELL
 
+    # install git
+    pkg install -y pkg
+    pkg install -y ca_root_nss git-tiny
+
     # fetch and update FreeBSD source code
-    ln -sf ../../bin/svnlite /usr/local/bin/svn
-    test -f /usr/src/UPDATING || svn co "https://svn.freebsd.org/base/releng/#{$freebsd_version}" /usr/src
-    echo 'SVN_UPDATE=		yes' > /etc/make.conf
-    echo 'WITHOUT_DEBUG_FILES=	yes' > /etc/src.conf
-    echo 'WITHOUT_TESTS=	yes' >> /etc/src.conf
-    cd /usr/src && make update
+    test -f /usr/src/UPDATING || git clone -b releng/#{$freebsd_version} --depth 1 https://git.freebsd.org/src.git /usr/src
+    cd /usr/src && git pull
 
     # check if source changed and rebuild everything if necessary
     if [ ! -f /usr/obj/usr/src/bin/freebsd-version/freebsd-version -o /usr/src/UPDATING -nt /usr/obj/usr/src/bin/freebsd-version/freebsd-version ]
