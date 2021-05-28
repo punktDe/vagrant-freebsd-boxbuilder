@@ -76,6 +76,10 @@ Vagrant.configure(2) do |config|
     pkg install -y pkg
     pkg install -y ca_root_nss git-tiny
 
+    # don't build debug and test code
+    echo 'WITHOUT_DEBUG_FILES=	yes' > /etc/src.conf
+    echo 'WITHOUT_TESTS=	yes' >> /etc/src.conf
+
     # fetch and update FreeBSD source code
     test -f /usr/src/UPDATING || git clone -b releng/#{$freebsd_version} --depth 1 https://git.freebsd.org/src.git /usr/src
     cd /usr/src && git pull
