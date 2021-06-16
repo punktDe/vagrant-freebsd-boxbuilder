@@ -22,6 +22,8 @@ do
   VBoxManage storageattach "${boxname}" --storagectl LsiLogic --port 0 --device 0 --type hdd --medium "${boxdir}/${boxname}.vmdk"
 
   VBoxManage modifyvm "${boxname}" --memory 4096
+  VBoxManage modifyvm "${boxname}" --graphicscontroller vmsvga
+  VBoxManage modifyvm "${boxname}" --vram 32
 
   rm -f "${boxname}.box"
   vagrant package --base "${boxname}" --output "${boxname}.box"
