@@ -12,12 +12,13 @@ Vagrant.configure(2) do |config|
   # minimal packages necessary to run Vagrant and Ansible
   $initial_package_list = 'sudo bash virtualbox-ose-additions-nox11 python3'
 
-  # Target disk specification
+  # Target disk and controller specification
   #
   # * Disk size and swap size in megabytes
-  # * Controller must match config of build box from Hashicorp
-  # * Device depends on build box, too
+  # * Controller must match config of the build box used
+  # * Host I/O cache - 'on' might shorten build times but requires more memory
   $disk_controller = 'LsiLogic'
+  $disk_controller_hostcache = 'off'
 
   $zfs_disk_size = 60 * 1024
   $zfs_swap_size = 4096
@@ -63,6 +64,7 @@ Vagrant.configure(2) do |config|
       vb.customize ['storageattach', :id,  '--storagectl', $disk_controller, '--port', 2, '--device', 0, '--type', 'hdd', '--medium', 'none']
       vb.customize ['closemedium', 'ufs.vmdk', '--delete']
     end
+    vb.customize ['storagectl', :id, '--name', 'LsiLogic', '--hostiocache', $disk_controller_hostcache ]
     vb.customize ['createhd', '--format', 'VMDK', '--filename', 'zfs.vmdk', '--variant', 'Standard', '--size', $zfs_disk_size]
     vb.customize ['storageattach', :id,  '--storagectl', $disk_controller, '--port', 1, '--device', 0, '--type', 'hdd', '--medium', 'zfs.vmdk']
     vb.customize ['createhd', '--format', 'VMDK', '--filename', 'ufs.vmdk', '--variant', 'Standard', '--size', $ufs_disk_size]
