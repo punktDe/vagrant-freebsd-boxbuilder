@@ -16,9 +16,10 @@ Vagrant.configure(2) do |config|
   #
   # * Disk size and swap size in megabytes
   # * Controller must match config of the build box used
-  # * Host I/O cache - 'on' might shorten build times but requires more memory
+  # * Host I/O cache - 'on' or 'off' - the former seems to be necessary when
+  #   running Vagrant on FreeBSD with ZFS
   $disk_controller = 'LsiLogic'
-  $disk_controller_hostcache = 'off'
+  $disk_controller_hostcache = 'on'
 
   $zfs_disk_size = 60 * 1024
   $zfs_swap_size = 4096
