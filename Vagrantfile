@@ -33,13 +33,9 @@ Vagrant.configure(2) do |config|
   $zfs_disk_seek = $zfs_disk_size * 2048 - 34
   $ufs_disk_seek = $ufs_disk_size * 2048 - 34
 
-  # User settable  box parameters here
-  $vagrant_mount_path = '/var/vagrant'
-  $virtual_machine_ip = '10.20.30.193'
-
   # Use NFS instead of folder sharing
   config.vm.synced_folder '.', '/vagrant', id: 'vagrant-root', disabled: true
-  config.vm.synced_folder '.', "#{$vagrant_mount_path}", :nfs => true, :nfs_version => 3
+  config.vm.synced_folder '.', '/var/vagrant', :nfs => true, :nfs_version => 3
 
   # Enable SSH keepalive to work around https://github.com/hashicorp/vagrant/issues/516
   config.ssh.keep_alive = true
@@ -50,8 +46,8 @@ Vagrant.configure(2) do |config|
 
   # Create a private network, which allows host-only access to the machine
   # using a specific IP.
-  config.vm.network 'private_network', ip: $virtual_machine_ip
-
+  config.vm.network 'private_network', type: 'dhcp'
+  
   # Customize build VB settings
   config.vm.provider 'virtualbox' do |vb|
     vb.memory = 4096
@@ -80,7 +76,7 @@ Vagrant.configure(2) do |config|
 
     # Direct command output to central logfile
     datetime=$(date +%Y%m%d%H%M)
-    exec 1>"#{$vagrant_mount_path}/build-${datetime}.log" 2>&1
+    exec 1>"/var/vagrant/build-${datetime}.log" 2>&1
 
     # Print start message
     echo "============================================================" >&3
