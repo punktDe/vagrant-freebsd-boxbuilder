@@ -3,7 +3,8 @@ Vagrant project to generate FreeBSD based Vagrant boxes with ZFS and UFS
 
 For the impatient
 -----------------
-````
+
+````sh
 git clone git@github.com:punktDe/vagrant-freebsd-boxbuilder.git
 cd vagrant-freebsd-boxbuilder
 vagrant up
@@ -15,6 +16,7 @@ cd test
 
 Files
 -----
+
 * `Vagrantfile` - how to start and provision the box
 * `files/*` - config files that are copied into the final box
 * `test/test.sh` - small test shellscript that provisions both boxes, logs you
@@ -22,6 +24,7 @@ Files
 
 Parameters to tweak
 -------------------
+
 In _Vagrantfile_:
 
 * `$build_box` - which box to use for building
@@ -33,6 +36,7 @@ In _Vagrantfile_:
 
 How's it work?
 --------------
+
 Use `vagrant up` or `vagrant provision` (on subsequent runs) to:
 
 * Deploy and start the named build box.
@@ -50,12 +54,14 @@ consistent. Boxes will be destroyed automatically after you log out again.
 
 Useful info
 -----------
+
 * On subsequent `vagrant provision` runs the compile stage is skipped if there
   are no changes to `/usr/src/UPDATING`.
 * When making changes, shutdown via `vagrant halt` before each new `vagrant provision`.
 
 Major version upgrade
 ---------------------
+
 * Keep e.g. 12.2 as the `$build_box` and set `$freebsd_version` to 13.0
 * Build the project - this will lead to a 13.0 box with 12.2 packages installed
 * Use this box as the new `$build_box` and build again

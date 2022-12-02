@@ -3,17 +3,9 @@ Vagrant.configure(2) do |config|
   $virtual_machine_hostname = 'test.vagrant.punkt.dev'
   $virtual_box_machine_name = 'FreeBSD-Test'
 
-  # Use NFS instead of folder sharing
-  config.vm.synced_folder '.', '/vagrant', id: 'vagrant-root', disabled: true
-  config.vm.synced_folder '.', '/var/vagrant', :nfs => true, :nfs_version => 3
-
-  # Etery Vagrant development environment requires a box. You can search for
+  # Every Vagrant development environment requires a box. You can search for
   # boxes at https://atlas.hashicorp.com/search.
   config.vm.box = 'punktde/ufs-test'
-
-  # Create a private network, which allows host-only access to the machine
-  # using a specific IP.
-  config.vm.network 'private_network', type: 'dhcp'
 
   # Customize VB settings
   config.vm.provider 'virtualbox' do |vb|

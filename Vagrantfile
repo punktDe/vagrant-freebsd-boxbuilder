@@ -33,20 +33,12 @@ Vagrant.configure(2) do |config|
   $zfs_disk_seek = $zfs_disk_size * 2048 - 34
   $ufs_disk_seek = $ufs_disk_size * 2048 - 34
 
-  # Use NFS instead of folder sharing
-  config.vm.synced_folder '.', '/vagrant', id: 'vagrant-root', disabled: true
-  config.vm.synced_folder '.', '/var/vagrant', :nfs => true, :nfs_version => 3
-
   # Enable SSH keepalive to work around https://github.com/hashicorp/vagrant/issues/516
   config.ssh.keep_alive = true
 
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://atlas.hashicorp.com/search.
   config.vm.box = $build_box
-
-  # Create a private network, which allows host-only access to the machine
-  # using a specific IP.
-  config.vm.network 'private_network', type: 'dhcp'
   
   # Customize build VB settings
   config.vm.provider 'virtualbox' do |vb|
@@ -76,7 +68,7 @@ Vagrant.configure(2) do |config|
 
     # Direct command output to central logfile
     datetime=$(date +%Y%m%d%H%M)
-    exec 1>"/var/vagrant/build-${datetime}.log" 2>&1
+    exec 1>"/vagrant/build-${datetime}.log" 2>&1
 
     # Print start message
     echo "============================================================" >&3
@@ -221,7 +213,7 @@ Vagrant.configure(2) do |config|
       echo "*" | pw -R "${dstdir}" useradd -n vagrant -u 1001 -s /usr/local/bin/bash -m -g 1001 -G wheel -H 0
       mkdir "${dstdir}/home/vagrant/.ssh"
       chmod 700 "${dstdir}/home/vagrant/.ssh"
-      cp /var/vagrant/files/vagrant.pub "${dstdir}/home/vagrant/.ssh/authorized_keys"
+      cp /vagrant/files/vagrant.pub "${dstdir}/home/vagrant/.ssh/authorized_keys"
       chown -R 1001:1001 "${dstdir}/home/vagrant"
       echo "done."                                                        >&3
       echo "------------------------------------------------------------" >&3
@@ -229,9 +221,9 @@ Vagrant.configure(2) do |config|
       # Copy config files
       echo "------------------------------------------------------------" >&3
       echo "Performing final configuration in ${dstdir} ... "             >&3
-      cp "/var/vagrant/files${dstdir}/fstab" "${dstdir}/etc"
-      cp "/var/vagrant/files${dstdir}/rc.conf" "${dstdir}/etc"
-      cp "/var/vagrant/files${dstdir}/loader.conf" "${dstdir}/boot"
+      cp "/vagrant/files${dstdir}/fstab" "${dstdir}/etc"
+      cp "/vagrant/files${dstdir}/rc.conf" "${dstdir}/etc"
+      cp "/vagrant/files${dstdir}/loader.conf" "${dstdir}/boot"
       echo "done."                                                        >&3
       echo "------------------------------------------------------------" >&3
     done
