@@ -33,7 +33,7 @@ In _Vagrantfile_:
 
 How's it work?
 --------------
-Use `vgrant up` or `vagrant provision` (on subsequent runs) to:
+Use `vagrant up` or `vagrant provision` (on subsequent runs) to:
 
 * Deploy and start the named build box.
 * Create second and third HDD via `VBoxManage`.
@@ -54,7 +54,7 @@ Useful info
   are no changes to `/usr/src/UPDATING`.
 * When making changes, shutdown via `vagrant halt` before each new `vagrant provision`.
 
-Major version ugrade
+Major version upgrade
 ---------------------
 * Keep e.g. 12.2 as the `$build_box` and set `$freebsd_version` to 13.0
 * Build the project - this will lead to a 13.0 box with 12.2 packages installed
