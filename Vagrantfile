@@ -106,7 +106,7 @@ Vagrant.configure(2) do |config|
     echo "------------------------------------------------------------" >&3
 
     # Check if source code changed and rebuild everything if necessary
-    if [ ! -f /usr/obj/usr/src/bin/freebsd-version/freebsd-version -o /usr/src/UPDATING -nt /usr/obj/usr/src/bin/freebsd-version/freebsd-version ]
+    if [ ! -f /usr/obj/usr/src/amd64.amd64/bin/freebsd-version/freebsd-version -o /usr/src/UPDATING -nt /usr/obj/usr/src/amd64.amd64/bin/freebsd-version/freebsd-version ]
     then
       echo "------------------------------------------------------------" >&3
       echo "Building FreeBSD #{$freebsd_version} ... "                    >&3
