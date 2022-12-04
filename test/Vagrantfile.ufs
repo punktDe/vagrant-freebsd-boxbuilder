@@ -3,11 +3,15 @@ Vagrant.configure(2) do |config|
   $virtual_machine_hostname = 'test.vagrant.punkt.dev'
   $virtual_box_machine_name = 'FreeBSD-Test'
 
-  # Every Vagrant development environment requires a box. You can search for
-  # boxes at https://atlas.hashicorp.com/search.
-  config.vm.box = 'punktde/ufs-test'
+  # Enable SSH keepalive to work around https://github.com/hashicorp/vagrant/issues/516
+  config.ssh.keep_alive = true
+
+  # Disable folder sharing
+  config.vm.synced_folder ".", "/vagrant", disabled: true
 
   # Customize VB settings
+  config.vm.box = 'punktde/ufs-test'
+
   config.vm.provider 'virtualbox' do |vb|
     vb.memory = '4096'
     vb.cpus = '2'

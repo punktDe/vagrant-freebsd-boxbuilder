@@ -12,6 +12,9 @@ Vagrant.configure(2) do |config|
   # Minimal packages necessary to run Vagrant and Ansible
   $initial_package_list = 'sudo bash virtualbox-ose-additions-nox11 python3'
 
+  # Installable files base URL
+  $files_base_url = 'https://raw.githubusercontent.com/punktDe/vagrant-freebsd-boxbuilder/master/files'
+
   # Target disk and controller specification
   #
   # * Disk size and swap size in megabytes
@@ -36,11 +39,12 @@ Vagrant.configure(2) do |config|
   # Enable SSH keepalive to work around https://github.com/hashicorp/vagrant/issues/516
   config.ssh.keep_alive = true
 
-  # Every Vagrant development environment requires a box. You can search for
-  # boxes at https://atlas.hashicorp.com/search.
-  config.vm.box = $build_box
+  # Disable folder sharing
+  config.vm.synced_folder ".", "/vagrant", disabled: true
   
   # Customize build VB settings
+  config.vm.box = $build_box
+
   config.vm.provider 'virtualbox' do |vb|
     vb.memory = 4096
     vb.cpus = $build_cores
@@ -68,12 +72,12 @@ Vagrant.configure(2) do |config|
 
     # Direct command output to central logfile
     datetime=$(date +%Y%m%d%H%M)
-    exec 1>"/vagrant/build-${datetime}.log" 2>&1
+    exec 1>"/var/tmp/build-${datetime}.log" 2>&1
 
     # Print start message
     echo "============================================================" >&3
     echo "Starting build for FreeBSD #{$freebsd_version}."              >&3
-    echo "Logging to build-${datetime}.log."                            >&3
+    echo "Logging to /var/tmp/build-${datetime}.log."                   >&3
     echo "============================================================" >&3
 
     # Install git
@@ -213,7 +217,7 @@ Vagrant.configure(2) do |config|
       echo "*" | pw -R "${dstdir}" useradd -n vagrant -u 1001 -s /usr/local/bin/bash -m -g 1001 -G wheel -H 0
       mkdir "${dstdir}/home/vagrant/.ssh"
       chmod 700 "${dstdir}/home/vagrant/.ssh"
-      cp /vagrant/files/vagrant.pub "${dstdir}/home/vagrant/.ssh/authorized_keys"
+      fetch -o "${dstdir}/home/vagrant/.ssh/authorized_keys" "#{$files_base_url}/vagrant.pub"
       chown -R 1001:1001 "${dstdir}/home/vagrant"
       echo "done."                                                        >&3
       echo "------------------------------------------------------------" >&3
@@ -221,9 +225,9 @@ Vagrant.configure(2) do |config|
       # Copy config files
       echo "------------------------------------------------------------" >&3
       echo "Performing final configuration in ${dstdir} ... "             >&3
-      cp "/vagrant/files${dstdir}/fstab" "${dstdir}/etc"
-      cp "/vagrant/files${dstdir}/rc.conf" "${dstdir}/etc"
-      cp "/vagrant/files${dstdir}/loader.conf" "${dstdir}/boot"
+      fetch -o "${dstdir}/etc/fstab" "#{$files_base_url}${dstdir}/fstab"
+      fetch -o "${dstdir}/etc/rc.conf" "#{$files_base_url}${dstdir}/rc.conf"
+      fetch -o "${dstdir}/boot/loader.conf" "#{$files_base_url}${dstdir}/loader.conf"
       echo "done."                                                        >&3
       echo "------------------------------------------------------------" >&3
     done
