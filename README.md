@@ -4,7 +4,7 @@ Vagrant project to generate FreeBSD based Vagrant boxes with ZFS and UFS
 For the impatient
 -----------------
 
-````sh
+```sh
 git clone git@github.com:punktDe/vagrant-freebsd-boxbuilder.git
 cd vagrant-freebsd-boxbuilder
 vagrant up
@@ -12,7 +12,7 @@ vagrant halt
 ./package.sh
 cd test
 ./test.sh
-````
+```
 
 Files
 -----
