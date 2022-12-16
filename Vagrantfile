@@ -201,6 +201,8 @@ Vagrant.configure(2) do |config|
       echo "------------------------------------------------------------" >&3
       echo "Installing packages into ${dstdir} ... "                      >&3
       export ASSUME_ALWAYS_YES="yes"
+      export IGNORE_OSVERSION="yes"
+      rm -rf /usr/local/etc/pkg/repos
       pkg -r "${dstdir}" install pkg ca_root_nss
       pkg -r "${dstdir}" install #{$initial_package_list}
       echo "done."                                                        >&3
