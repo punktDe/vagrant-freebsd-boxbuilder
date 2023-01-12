@@ -14,6 +14,16 @@ cd test
 ./test.sh
 ```
 
+Networking considerations
+-------------------------
+
+VirtualBox reserves the `192.168.56.0/21` range of IPv4 addresses for host-only networking.
+The default address of the box in this project is `192.168.57.57`. If that collides
+with your local infrastructure set a different one in the [Vagrantfile](Vagrantfile). Make sure
+not to pick the lowest one in the respective network, which is reserved for the host by VirtualBox.
+
+For more details see the relevant [VirtualBox documentation](https://www.virtualbox.org/manual/ch06.html#network_hostonly).
+
 Files
 -----
 
