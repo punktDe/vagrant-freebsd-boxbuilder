@@ -1,13 +1,13 @@
 Vagrant.configure(2) do |config|
 
   # Which box to use for building
-  $build_box = 'punktde/freebsd-131-ufs'
+  $build_box = 'punktde/freebsd-132-ufs'
 
   # How many cores to use
   $build_cores = 4
 
   # Which FreeBSD version to install in target box
-  $freebsd_version = '13.1'
+  $freebsd_version = '13.2'
 
   # Minimal packages necessary to run Vagrant and Ansible
   $initial_package_list = 'sudo bash virtualbox-ose-additions-nox11 python3'
@@ -83,7 +83,7 @@ Vagrant.configure(2) do |config|
     # Print start message
     echo "============================================================" >&3
     echo "Starting build for FreeBSD #{$freebsd_version}."              >&3
-    echo "Logging to /var/tmp/build-${datetime}.log."                   >&3
+    echo "Logging to build-${datetime}.log."                            >&3
     echo "============================================================" >&3
 
     # Install git
