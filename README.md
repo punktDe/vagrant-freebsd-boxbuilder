@@ -44,17 +44,17 @@ In _Vagrantfile_:
 * `${zfs|ufs}_disk_size` - size of hard disk for respective target box
 * `${zfs|ufs}_swap_size` - swap size for respective target box
 
-How's it work?
---------------
+How does it work?
+-----------------
 
 Use `vagrant up` or `vagrant provision` (on subsequent runs) to:
 
 * Deploy and start the named build box.
 * Create second and third HDD via `VBoxManage`.
-* Checkout (first run) or update (consecutive runs) FreeBSD source tree.
-* Compile userland and kernel if necessary.
 * Create ZFS, install, add config files and `vagrant` user on second hard disk.
 * Create UFS, [...] on third hard disk.
+* Install FreeBSD in the configured version to the destination disks.
+* Run `freebsd-update` on both installations.
 * Install some packages on both disks.
 
 When the job is finished use `vagrant halt` followed by `./package.sh` script to create `.box` files from the disk images.
@@ -65,18 +65,11 @@ consistent. Boxes will be destroyed automatically after you log out again.
 Useful info
 -----------
 
-* On subsequent `vagrant provision` runs the compile stage is skipped if there
-  are no changes to `/usr/src/UPDATING`.
-* When making changes, shutdown via `vagrant halt` before each new `vagrant provision`.
+* When making changes, shutdown via `vagrant halt` before each new `vagrant up --provision`.
 
 Major version upgrade
 ---------------------
 
-* Keep e.g. 12.2 as the `$build_box` and set `$freebsd_version` to 13.0
-* Build the project - this will lead to a 13.0 box with 12.2 packages installed
+* Keep e.g. 13.2 as the `$build_box` and set `$freebsd_version` to 14.0
+* Build the project - this will lead to a 14.0 box with 13.2 packages installed
 * Use this box as the new `$build_box` and build again
-* XXX - This might fail if a `mergemaster -p` is required. To remedy:
-  * SSH into the box, run `mergemaster -p`
-  * `vagrant halt`
-  * `vagrant up`
-  * `vagrant provision`
