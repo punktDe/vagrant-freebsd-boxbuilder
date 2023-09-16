@@ -3,14 +3,18 @@ Vagrant.configure(2) do |config|
   # Which box to use for building
   $build_box = 'punktde/freebsd-132-ufs'
 
-  # How many cores to use
+  # How many cores and memory (in GB) to use
   $build_cores = 4
+  $build_memory = 4
 
   # Which FreeBSD version to install in target box
   $freebsd_version = '13.2'
 
   # Minimal packages necessary to run Vagrant and Ansible
   $initial_package_list = 'sudo bash virtualbox-ose-additions-nox11 python3'
+
+  # Base URL/mirror from which to retrieve the release tar archives
+  $mirror_url = 'http://ftp2.de.freebsd.org/pub/FreeBSD/releases/amd64'
 
   # Target disk and controller specification
   #
@@ -29,17 +33,12 @@ Vagrant.configure(2) do |config|
   $ufs_swap_size = 4096
   $ufs_disk_device = 'da2'
 
-  # How far to seek to the end of the device to erase GPT information
-  $zfs_disk_seek = $zfs_disk_size * 2048 - 34
-  $ufs_disk_seek = $ufs_disk_size * 2048 - 34
-
-  # User settable  box parameters here
+  # Mount path for local project directory
   $vagrant_mount_path = '/var/vagrant'
+
+  # IP address of the VM
   $virtual_machine_ip = '192.168.57.57'
   
-  # Enable SSH keepalive to work around https://github.com/hashicorp/vagrant/issues/516
-  config.ssh.keep_alive = true
-
   # Use NFS instead of folder sharing
   config.vm.synced_folder '.', '/vagrant', id: 'vagrant-root', disabled: true
   config.vm.synced_folder '.', "#{$vagrant_mount_path}", :nfs => true, :nfs_version => 3
@@ -52,7 +51,7 @@ Vagrant.configure(2) do |config|
   config.vm.network 'private_network', ip: $virtual_machine_ip
 
   config.vm.provider 'virtualbox' do |vb|
-    vb.memory = 4096
+    vb.memory = $build_memory * 1024
     vb.cpus = $build_cores
 
     if File.exist?('zfs.vmdk')
@@ -86,52 +85,18 @@ Vagrant.configure(2) do |config|
     echo "Logging to build-${datetime}.log."                            >&3
     echo "============================================================" >&3
 
-    # Install git
+    # Fetch FreeBSD release tarballs
     echo "------------------------------------------------------------" >&3
-    echo "Installing git ... "                                          >&3
-    pkg install -y pkg
-    pkg install -y ca_root_nss git-tiny
+    echo "Fetching FreeBSD #{$freebsd_version} release tarballs ..."    >&3
+    cd /var/tmp
+    fetch "#{$mirror_url}/#{$freebsd_version}-RELEASE/base.txz"
+    fetch "#{$mirror_url}/#{$freebsd_version}-RELEASE/kernel.txz"
     echo "done."                                                        >&3
     echo "------------------------------------------------------------" >&3
-
-    # Don't build debug and test code
-    echo 'WITHOUT_DEBUG_FILES=	yes' > /etc/src.conf
-    echo 'WITHOUT_TESTS=	yes' >> /etc/src.conf
-
-    # Fetch and update FreeBSD source code
-    echo "------------------------------------------------------------" >&3
-    if [ ! -f /usr/src/UPDATING ]
-    then
-      echo "Cloning FreeBSD #{$freebsd_version} source tree ... "       >&3
-      git clone -b releng/#{$freebsd_version} --depth 1 https://git.freebsd.org/src.git /usr/src
-    else
-      echo "Updating FreeBSD #{$freebsd_version} source tree ... "      >&3
-      cd /usr/src && git pull
-    fi
-    echo "done."                                                        >&3
-    echo "------------------------------------------------------------" >&3
-
-    # Check if source code changed and rebuild everything if necessary
-    if [ ! -f /usr/obj/usr/src/amd64.amd64/bin/freebsd-version/freebsd-version -o /usr/src/UPDATING -nt /usr/obj/usr/src/amd64.amd64/bin/freebsd-version/freebsd-version ]
-    then
-      echo "------------------------------------------------------------" >&3
-      echo "Building FreeBSD #{$freebsd_version} ... "                    >&3
-      chflags -R noschg /usr/obj
-      rm -rf /usr/obj
-      cd /usr/src && make -j #{$build_cores} buildworld buildkernel
-      echo "done."                                                        >&3
-      echo "------------------------------------------------------------" >&3
-    fi
 
     # Create and mount all target partitions and filesystems
     echo "------------------------------------------------------------" >&3
     echo "Setting up target disks ... "                                 >&3
-
-    # Erase target disks
-    dd if=/dev/zero of=/dev/#{$zfs_disk_device} count=34
-    dd if=/dev/zero of=/dev/#{$zfs_disk_device} oseek=#{$zfs_disk_seek}
-    dd if=/dev/zero of=/dev/#{$ufs_disk_device} count=34
-    dd if=/dev/zero of=/dev/#{$ufs_disk_device} oseek=#{$ufs_disk_seek}
 
     # Create partitions and install bootloader for ZFS disk
     gpart create -s gpt #{$zfs_disk_device}
@@ -152,7 +117,6 @@ Vagrant.configure(2) do |config|
     mkdir /ufs
 
     # Load ZFS
-    kldload opensolaris
     kldload zfs
     sysctl vfs.zfs.min_auto_ashift=12
 
@@ -199,10 +163,18 @@ Vagrant.configure(2) do |config|
       # Install FreeBSD
       echo "------------------------------------------------------------" >&3
       echo "Installing FreeBSD #{$freebsd_version} into ${dstdir} ... "   >&3
-      cd /usr/src && make "DESTDIR=${dstdir}" installworld installkernel distribution
+      cd "${dstdir}" && tar xzf /var/tmp/base.txz && tar xzf /var/tmp/kernel.txz
       echo "done."                                                        >&3
       echo "------------------------------------------------------------" >&3
-  
+
+      # Update FreeBSD
+      echo "------------------------------------------------------------" >&3
+      echo "Updating FreeBSD #{$freebsd_version} in ${dstdir} ... "       >&3
+      freebsd-update fetch --not-running-from-cron -b ${dstdir}
+      freebsd-update install --not-running-from-cron -b ${dstdir}
+      echo "done."                                                        >&3
+      echo "------------------------------------------------------------" >&3
+
       # Install packages
       echo "------------------------------------------------------------" >&3
       echo "Installing packages into ${dstdir} ... "                      >&3
