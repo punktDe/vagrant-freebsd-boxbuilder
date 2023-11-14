@@ -73,4 +73,12 @@ Major version upgrade
 * Keep e.g. 13.2 as the `$build_box` and set `$freebsd_version` to "14.0"
 * Set `$freebsd_version_upgrade` to "yes"
 * Build the project - this will lead to a 14.0 box with 13.2 packages installed
-* Manually import this box, it as the new `$build_box` and build again
+* Manually import this box, set it as the new `$build_box` in `Vagrantfile`,
+  set `$freebsd_version_upgrade` to "no" and build again:
+
+  ```sh
+  vagrant box add --name punktde/freebsd-140-ufs freebsd-140-ufs.box
+  vi Vagrantfile
+  vagrant destroy
+  vagrant up
+  ```
