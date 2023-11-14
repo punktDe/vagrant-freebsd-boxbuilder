@@ -70,6 +70,7 @@ Useful info
 Major version upgrade
 ---------------------
 
-* Keep e.g. 13.2 as the `$build_box` and set `$freebsd_version` to 14.0
+* Keep e.g. 13.2 as the `$build_box` and set `$freebsd_version` to "14.0"
+* Set `$freebsd_version_upgrade` to "yes"
 * Build the project - this will lead to a 14.0 box with 13.2 packages installed
-* Use this box as the new `$build_box` and build again
+* Manually import this box, it as the new `$build_box` and build again

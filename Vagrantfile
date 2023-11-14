@@ -1,20 +1,23 @@
 Vagrant.configure(2) do |config|
 
   # Which box to use for building
-  $build_box = 'punktde/freebsd-132-ufs'
+  $build_box = 'punktde/freebsd-140-ufs'
 
   # How many cores and memory (in GB) to use
   $build_cores = 4
   $build_memory = 4
 
   # Which FreeBSD version to install in target box
-  $freebsd_version = '13.2'
+  $freebsd_version = '14.0'
+
+  # Are we doing a major version upgrade?
+  $freebsd_version_upgrade = 'no'
 
   # Minimal packages necessary to run Vagrant and Ansible
   $initial_package_list = 'sudo bash virtualbox-ose-additions-nox11 python3'
 
   # Base URL/mirror from which to retrieve the release tar archives
-  $mirror_url = 'http://ftp2.de.freebsd.org/pub/FreeBSD/releases/amd64'
+  $mirror_url = 'http://ftp.freebsd.org/pub/FreeBSD/releases/amd64'
 
   # Target disk and controller specification
   #
@@ -168,12 +171,15 @@ Vagrant.configure(2) do |config|
       echo "------------------------------------------------------------" >&3
 
       # Update FreeBSD
-      echo "------------------------------------------------------------" >&3
-      echo "Updating FreeBSD #{$freebsd_version} in ${dstdir} ... "       >&3
-      freebsd-update fetch --not-running-from-cron -b ${dstdir}
-      freebsd-update install --not-running-from-cron -b ${dstdir}
-      echo "done."                                                        >&3
-      echo "------------------------------------------------------------" >&3
+      if [ "#{$freebsd_version_upgrade}" == 'no' ]
+      then
+        echo "------------------------------------------------------------" >&3
+        echo "Updating FreeBSD #{$freebsd_version} in ${dstdir} ... "       >&3
+        freebsd-update fetch --not-running-from-cron -b ${dstdir}
+        freebsd-update install --not-running-from-cron -b ${dstdir}
+        echo "done."                                                        >&3
+        echo "------------------------------------------------------------" >&3
+      fi
 
       # Install packages
       echo "------------------------------------------------------------" >&3
