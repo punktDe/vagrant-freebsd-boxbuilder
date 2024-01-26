@@ -40,6 +40,7 @@ In _Vagrantfile_:
 * `$build_box` - which box to use for building
 * `$build_cores` - how many cores to use for building
 * `$freebsd_version` - which FreeBSD version to install in the target boxes
+* `$freebsd_version_upgrade` - are we performing a major version upgrade - yes|no?
 * `$initial_package_list` - which packages you want in your box by default
 * `${zfs|ufs}_disk_size` - size of hard disk for respective target box
 * `${zfs|ufs}_swap_size` - swap size for respective target box
@@ -51,11 +52,12 @@ Use `vagrant up` or `vagrant provision` (on subsequent runs) to:
 
 * Deploy and start the named build box.
 * Create second and third HDD via `VBoxManage`.
-* Create ZFS, install, add config files and `vagrant` user on second hard disk.
-* Create UFS, [...] on third hard disk.
+* Create ZFS disk layout on second hard disk.
+* Create UFS disk layout on third hard disk.
 * Install FreeBSD in the configured version to the destination disks.
 * Run `freebsd-update` on both installations.
 * Install some packages on both disks.
+* Perform basic configuration and create `vagrant` user on both disks.
 
 When the job is finished use `vagrant halt` followed by `./package.sh` script to create `.box` files from the disk images.
 
