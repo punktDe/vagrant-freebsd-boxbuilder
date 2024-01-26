@@ -148,7 +148,7 @@ Vagrant.configure(2) do |config|
     zfs create                     -o exec=off     -o setuid=off   zroot/var/log
     zfs create -o atime=on         -o exec=off     -o setuid=off   zroot/var/mail
     zfs create                     -o exec=on      -o setuid=off   zroot/var/tmp
-    zfs create -o mountpoint=/home                                 zroot/usr/home
+    zfs create -o mountpoint=/home                                 zroot/home
 
     chmod 1777 /zfs/var/tmp
     chmod 1777 /zfs/tmp
